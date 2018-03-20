@@ -1,0 +1,46 @@
+{
+  "name": "@patternplate/app",
+  "version": "1.0.0",
+  "description": "A shared space for system design and engineering.",
+  "scripts": {
+    "build": "tsc",
+    "lint": "tslint -c tslint.json -p tsconfig.json",
+    "start": "tsc && concurrently \"tsc -w\" \"electron .\""
+  },
+  "repository": "https://github.com/electron/electron-quick-start-typescript",
+  "keywords": [
+    "Electron",
+    "quick",
+    "start",
+    "tutorial",
+    "demo",
+    "typescript"
+  ],
+  "author": {
+    "name": "Mario Nebl",
+    "email": "mario.nebl@sinnerschrader.com"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^3.5.1",
+    "electron": "^1.7.11",
+    "electron-reloader": "^0.2.0",
+    "tslint": "^5.9.1",
+    "typescript": "^2.6.2"
+  },
+  "dependencies": {
+    "@types/express": "^4.11.1",
+    "@types/get-port": "^3.2.0",
+    "@types/react": "^16.0.40",
+    "@types/react-dom": "^16.0.4",
+    "emotion": "^9.0.2",
+    "express": "^4.16.3",
+    "get-port": "^3.2.0",
+    "prettier": "^1.11.1",
+    "react": "^16.2.0",
+    "react-dom": "^16.2.0",
+    "react-emotion": "^9.0.2",
+    "tslint-config-prettier": "^1.10.0",
+    "unstated": "^1.1.0"
+  }
+}
