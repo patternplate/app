@@ -1,5 +1,10 @@
 import * as crypto from "crypto";
 import * as tempy from "tempy";
+import { observable } from "mobx";
+import * as uuid from "uuid";
+
+import { Git, VCS } from "./git";
+import { Channel } from "./nextable";
 
 enum VersionControlState {
   Unknown = 0,
@@ -10,34 +15,31 @@ enum VersionControlState {
 }
 
 interface RepositoryInit {
-  path: string;
   url: string;
 }
 
-const sha256 = (input: string): string => {
-  return crypto.createHash("sha256").update(input).digest("hex");
-}
-
 export class Repository {
-  private vcsState: VersionControlState;
-  private id: string;
-  private path: string;
-  private url: string;
+  public readonly id: string;
+  public readonly vcs: VCS;
+
+  @observable vcsState: VersionControlState;
+  @observable url: string;
 
   static fromUrl(url: string): Repository {
-    return new Repository({
-      url,
-      path: tempy.directory()
-    });
+    return new Repository({ url });
   }
 
   constructor(init: RepositoryInit) {
-    this.path = init.path;
-    this.url = init.path;
-    this.id = sha256(`${this.path}:${this.url}`);
+    this.url = init.url;
+    this.id = uuid.v4();
+    this.vcs = new Git(this);
   }
 
-  getId() {
-    return this.id;
+  clone(host: Channel) {
+    this.vcs.clone(host);
+  }
+
+  remove(host: Channel) {
+    this.vcs.remove(host);
   }
 }

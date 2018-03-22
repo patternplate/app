@@ -1,38 +1,93 @@
+import * as Os from "os";
 import * as Path from "path";
 import * as Crypto from "crypto";
+import { Subject } from "rxjs";
+import * as uuid from "uuid";
+
+import { Channel } from "./nextable";
 import { Repository } from "./repository";
 
-enum NodeModulesState {
- Unknown = 0,
- NeedsInstall = 1,
- Installed = 2,
- Error = 3
+import {
+  ProjectBaseMessage,
+  ProjectUnprocessedMessage,
+  ProjectProcessingMessage
+} from "../messages/project";
+
+import {
+  VCSErrorMessage,
+  VCSCloneEndMessage,
+  VCSCloneStartMessage,
+  VCSBaseMessage,
+  VCSPathRequest,
+  VCSPathResponse,
+  VCSRemoveRequest
+} from "../messages/vcs";
+
+export enum ProjectState {
+  Unprocessed = "UNPROCESSED",
+  Processing = "PROCESSING",
+  Fetching = "FETCHING",
+  Fetched = "FETCHED",
+  NeedsInstall = "NEEDS_INSTALL",
+  Installed = "INSTALLED",
+  Error = "ERROR",
+  Undefined = "UNDEFINED"
 }
 
 export interface ProjectInit {
   repository: Repository;
 }
 
-const sha256 = (input: string): string => {
-  return Crypto.createHash("sha256").update(input).digest("hex");
-}
+export class Project implements Channel {
+  private messages: (VCSBaseMessage | ProjectBaseMessage)[] = [];
 
-export class Project {
-  private id: string;
-  private repository: Repository;
+  public readonly id: string;
+  public readonly up: Subject<any> = new Subject();
+  public readonly down: Subject<any> = new Subject();
+
+  repository: Repository;
 
   static fromUrl(url: string) {
-    return new Project({
+    const project = new Project({
       repository: Repository.fromUrl(url)
     });
+
+    return project;
   }
 
   constructor(init: ProjectInit) {
     this.repository = init.repository;
-    this.id = sha256(`project:${this.repository.getId()}`);
+    this.id = uuid.v4();
+
+    this.up.subscribe((message: any) => {
+      if (message instanceof VCSPathRequest) {
+        this.down.next(
+          new VCSPathResponse(
+            message.tid,
+            Path.join(Os.homedir(), "patternplate")
+          )
+        );
+      }
+    });
+
+    this.up.next(new ProjectUnprocessedMessage(this.id, this));
   }
 
-  getId(): string {
-    return this.id;
+  subscribe(fn: (payload: Project) => void) {
+    this.up.subscribe(fn);
+    this.down.subscribe(fn);
+    fn(this);
+  }
+
+  process() {
+    this.up.next(new ProjectProcessingMessage(this.id, this));
+    this.repository.clone(this);
+    return this;
+  }
+
+  remove() {
+    this.down.next(new VCSRemoveRequest(this.id));
+    this.repository.remove(this);
+    return this;
   }
 }

@@ -7,7 +7,7 @@ let mainWindow: Electron.BrowserWindow;
 
 async function createWindow() {
   try {
-    installExtension(REACT_DEVELOPER_TOOLS)
+    // installExtension(REACT_DEVELOPER_TOOLS)
   } catch (err) {
     console.warn(err);
   }

@@ -1,26 +1,35 @@
 
 import * as React from "react";
 
-import {Start} from "./views/start";
-import {StartViewModel} from "./view-models/start";
+import { Start } from "./views/start";
+import { StartViewModel } from "./view-models/start";
 
-const {ThemeProvider, themes} = require("@patternplate/components");
+const { Observer, observer, inject } = require("mobx-react");
+const { ThemeProvider, themes } = require("@patternplate/components");
 
+interface InjectedAppProps {
+  start: StartViewModel;
+}
+
+@inject("start")
+@observer
 export class App extends React.Component {
-  state = { start: new StartViewModel() };
-
   render() {
-    const {start} = this.state;
+    const props = this.props as InjectedAppProps;
 
     return (
       <ThemeProvider theme={themes().dark}>
         <Start
-          onChange={(e) => start.setUrl((e.target as HTMLInputElement).value)}
-          onSubmit={(e) => {
-            e.preventDefault();
-            start.addProject(start.getUrl())
+          value={props.start.input}
+          valid={props.start.valid}
+          projects={props.start.projects}
+          onChange={(e: React.FormEvent<HTMLInputElement>) => {
+            props.start.setInput((e.target as HTMLInputElement).value);
           }}
-          value={start.getUrl()}
+          onSubmit={(e: React.FormEvent<HTMLFormElement>) => {
+            e.preventDefault();
+            props.start.addProject(props.start.input);
+          }}
           />
       </ThemeProvider>
     );
