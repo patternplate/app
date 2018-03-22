@@ -20,6 +20,13 @@ export class Project {
   private id: string;
   private repository: Repository;
 
+  static fromUrl(url: string) {
+    const repository = new Repository({url});
+    return new Project({
+      repository
+    });
+  }
+
   constructor(init: ProjectInit) {
     this.repository = init.repository;
     this.id = sha256(`project:${this.repository.getId()}`);
