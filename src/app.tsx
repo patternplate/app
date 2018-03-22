@@ -16,7 +16,10 @@ export class App extends React.Component {
       <ThemeProvider theme={themes().dark}>
         <Start
           onChange={(e) => start.setUrl((e.target as HTMLInputElement).value)}
-          onSubmit={(e) => start.addProject(start.getUrl())}
+          onSubmit={(e) => {
+            e.preventDefault();
+            start.addProject(start.getUrl())
+          }}
           value={start.getUrl()}
           />
       </ThemeProvider>

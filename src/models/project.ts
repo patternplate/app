@@ -1,4 +1,5 @@
-import * as crypto from "crypto";
+import * as Path from "path";
+import * as Crypto from "crypto";
 import { Repository } from "./repository";
 
 enum NodeModulesState {
@@ -13,7 +14,7 @@ export interface ProjectInit {
 }
 
 const sha256 = (input: string): string => {
-  return crypto.createHash("sha256").update(input).digest("hex");
+  return Crypto.createHash("sha256").update(input).digest("hex");
 }
 
 export class Project {
@@ -21,9 +22,8 @@ export class Project {
   private repository: Repository;
 
   static fromUrl(url: string) {
-    const repository = new Repository({url});
     return new Project({
-      repository
+      repository: Repository.fromUrl(url)
     });
   }
 

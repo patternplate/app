@@ -1,4 +1,5 @@
 import * as crypto from "crypto";
+import * as tempy from "tempy";
 
 enum VersionControlState {
   Unknown = 0,
@@ -22,6 +23,13 @@ export class Repository {
   private id: string;
   private path: string;
   private url: string;
+
+  static fromUrl(url: string): Repository {
+    return new Repository({
+      url,
+      path: tempy.directory()
+    });
+  }
 
   constructor(init: RepositoryInit) {
     this.path = init.path;
