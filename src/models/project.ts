@@ -1,5 +1,5 @@
 import * as crypto from "crypto";
-import { Repository } from "./Repository";
+import { Repository } from "./repository";
 
 enum NodeModulesState {
  Unknown = 0,
