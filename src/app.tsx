@@ -1,27 +1,17 @@
 
 import * as React from "react";
-import { Container, Subscribe } from "unstated";
 
-import {Logo} from "./logo";
+import {Start} from "./views/start";
+import {StartViewModel} from "./view-models/start";
 
-interface IAppState {
-  project: string;
-}
+const {ThemeProvider, themes} = require("@patternplate/components");
 
-class AppContainer extends Container<IAppState> {
-
-}
-
-export function App() {
-  return (
-    <Subscribe to={[AppContainer]}>
-      {
-        app => (
-          <React.Fragment>
-            <Logo />
-          </React.Fragment>
-        )
-      }
-    </Subscribe>
-  );
+export class App extends React.Component {
+  render() {
+    return (
+      <ThemeProvider theme={themes().dark}>
+        <Start/>
+      </ThemeProvider>
+    );
+  }
 }

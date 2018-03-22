@@ -5,8 +5,8 @@ export function Logo() {
   return (
     <StyledLogo xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
       <linearGradient id="gradient" x1="0" y1="0" x2="1" y2="1">
-        <stop offset="0%" stop-color="#4504DA"/>
-        <stop offset="100%" stop-color="#FF0353"/>
+        <stop offset="0%" stopColor="#4504DA"/>
+        <stop offset="100%" stopColor="#FF0353"/>
       </linearGradient>
       <g fill="url(#gradient)">
         <path d="M50 75a3.75 3.75 0 0 1-2-.56l-26.85-16.7a2.55 2.55 0 1 1 2.69-4.32L50 69.72l26.15-16.3a2.55 2.55 0 1 1 2.69 4.32L52 74.48a3.76 3.76 0 0 1-2 .52z"/>

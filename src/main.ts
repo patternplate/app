@@ -1,10 +1,17 @@
 import { app, BrowserWindow } from "electron"; // tslint:disable-line
+import installExtension, { REACT_DEVELOPER_TOOLS } from "electron-devtools-installer";
 import * as path from "path";
 import * as url from "url";
 
 let mainWindow: Electron.BrowserWindow;
 
 async function createWindow() {
+  try {
+    installExtension(REACT_DEVELOPER_TOOLS)
+  } catch (err) {
+    console.warn(err);
+  }
+
   // Create the browser window.
   mainWindow = new BrowserWindow({
     height: 600,

@@ -1,0 +1,1 @@
+export {StartViewModel} from "./start";
