@@ -22,6 +22,7 @@ export class App extends React.Component {
         <Start
           value={props.start.input}
           valid={props.start.valid}
+          src={props.start.src}
           projects={props.start.projects}
           onChange={(e: React.FormEvent<HTMLInputElement>) => {
             props.start.setInput((e.target as HTMLInputElement).value);

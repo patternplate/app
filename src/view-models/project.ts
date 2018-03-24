@@ -7,13 +7,18 @@ export enum ProjectViewState {
   Unknown = "UNKNOW",
   Fetching = "FETCHING",
   Fetched = "FETCHED",
+  Building = "BUILDING",
+  Built = "BUILT",
   Installing = "INSTALLING",
   Installed = "INSTALLED",
+  Starting = "STARTING",
+  Started = "STARTED",
+  Stopping = "STOPPING",
+  Stopped = "STOPPED",
   Errored = "ERRORED",
   Removing = "REMOVING",
   Removed = "REMOVED",
   Ready = "READY",
-  Running = "RUNNING"
 }
 
 export class ProjectViewModel {
@@ -23,6 +28,7 @@ export class ProjectViewModel {
   @observable state: string = ProjectViewState.Unknown;
   @observable progress: number;
   @observable highlighted: boolean;
+  @observable port: number = 0;
 
   constructor(project: Project) {
     this.model = project;
@@ -61,6 +67,39 @@ export class ProjectViewModel {
       match(Msg.Modules.ModulesInstallErrorNotification, () => {
         this.setState(ProjectViewState.Errored);
       });
+
+      match(Msg.Modules.ModulesBuildStartNotification, () => {
+        this.setState(ProjectViewState.Building);
+      });
+
+      match(Msg.Modules.ModulesBuildEndNotification, () => {
+        this.setState(ProjectViewState.Built);
+      });
+
+      match(Msg.Modules.ModulesBuildErrorNotification, () => {
+        this.setState(ProjectViewState.Errored);
+      });
+
+      match(Msg.Modules.ModulesStartStartNotification, () => {
+        this.setState(ProjectViewState.Starting);
+      });
+
+      match(Msg.Modules.ModulesStartStartedNotification, (notification) => {
+        this.setPort((notification as any).patternplate.port);
+        this.setState(ProjectViewState.Started);
+      });
+
+      match(Msg.Modules.ModulesStartErrorNotification, () => {
+        this.setState(ProjectViewState.Errored);
+      });
+
+      match(Msg.Modules.ModulesStopNotification, () => {
+        this.setState(ProjectViewState.Stopping);
+      });
+
+      match(Msg.Modules.ModulesStopEndNotification, (notification) => {
+        this.setState(ProjectViewState.Stopped);
+      });
     });
 
     this.model.up.subscribe((message: any) => {
@@ -87,6 +126,10 @@ export class ProjectViewModel {
 
   @action setProgress(percentage: number) {
     this.progress = percentage;
+  }
+
+  @action setPort(port: number) {
+    this.port = port;
   }
 
   @action highlight() {

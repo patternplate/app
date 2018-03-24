@@ -9,6 +9,7 @@ export interface StartProps {
   value: string;
   valid: boolean;
   projects: ProjectViewModel[];
+  src: string | null;
   onSubmit: React.FormEventHandler<HTMLFormElement>;
   onChange: React.FormEventHandler<HTMLInputElement>;
 }
@@ -39,7 +40,9 @@ export class Start extends React.Component<StartProps> {
                   <StyledProjectItem highlighted={p.highlighted} key={p.model.id}>
                     <Text>{p.model.url}</Text>
                     <Text>{p.state}</Text>
-                    <Text>{p.progress}</Text>
+                    {p.state === ProjectViewState.Fetching &&
+                      <Text>{p.progress}</Text>
+                    }
                     {
                       p.error && (
                         <Text>{p.error.message}</Text>
@@ -47,18 +50,33 @@ export class Start extends React.Component<StartProps> {
                     }
                     <button
                       type="button"
-                      disabled={p.state === ProjectViewState.Fetching || p.state === ProjectViewState.Installing || p.state === ProjectViewState.Running}
+                      disabled={p.state === ProjectViewState.Fetching || p.state === ProjectViewState.Installing || p.state === ProjectViewState.Starting}
                       onClick={() => p.model.remove()}
                       >
                       Remove
                     </button>
                     <button
                       type="button"
-                      disabled={p.state !== ProjectViewState.Running}
+                      disabled={p.state === ProjectViewState.Starting || p.state === ProjectViewState.Stopping}
+                      onClick={ProjectViewState.Started ? () => p.model.stop(): () => p.model.start()}
+                      >
+                      {ProjectViewState.Started ? "Stop": "Start"}
+                    </button>
+                    <button
+                      type="button"
+                      disabled={p.state !== ProjectViewState.Started}
                       onClick={() => p.model.open()}
                       >
                       Open
                     </button>
+                    {
+                      props.src && (
+                        <React.Fragment>
+                          <StyledWebview src={props.src}/>
+                          <StyledWebviewButton onClick={() => p.model.close()}>Close</StyledWebviewButton>
+                        </React.Fragment>
+                      )
+                    }
                   </StyledProjectItem>
                 ))}
             </StyledProjectList>
@@ -67,7 +85,6 @@ export class Start extends React.Component<StartProps> {
     );
   }
 }
-
 
 const StyledInputBar = styled.div`
   display: flex;
@@ -78,10 +95,6 @@ const StyledInputBar = styled.div`
   border: 1px solid ${(props: any) => props.theme.color};
   border-radius: 2px;
   margin-bottom: 50px;
-`;
-
-const blink = keyframes`
-
 `;
 
 const StyledProjectList = styled.ul`
@@ -105,8 +118,6 @@ const StyledProjectItem = styled.li`
   }
 `;
 
-
-
 const StyledInputButton = styled.button.attrs({type: "submit"})`
   height: 60px;
   border: none;
@@ -127,4 +138,20 @@ const StyledInput = styled.input`
   &:focus {
     outline: none;
   }
+`;
+
+const StyledWebview = styled("webview")`
+  position: fixed;
+  z-index: 1;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+`;
+
+const StyledWebviewButton = styled.button`
+  position: fixed;
+  z-index: 2;
+  top: 22px;
+  left: 20px;
 `;

@@ -4,6 +4,7 @@ import * as Crypto from "crypto";
 import { Subject } from "rxjs";
 import * as uuid from "uuid";
 import * as execa from "execa";
+import {remote} from "electron";
 
 import * as Msg from "../messages";
 import { Git, VersionControl } from "./git";
@@ -47,6 +48,7 @@ export class Project implements Channel {
       const match = Msg.match(message);
       match(Msg.Project.ProjectProcessRequest, () => this.process());
       match(Msg.Project.ProjectInstallRequest, () => this.install());
+      match(Msg.Project.ProjectBuildRequest, () => this.build());
       match(Msg.Project.ProjectStartRequest, () => this.start());
     });
 
@@ -56,6 +58,9 @@ export class Project implements Channel {
         setTimeout(() => this.down.next(new Msg.Project.ProjectInstallRequest(this.id, this)), 0);
       });
       match(Msg.Modules.ModulesInstallEndNotification, () => {
+        setTimeout(() => this.down.next(new Msg.Project.ProjectBuildRequest(this.id, this)), 0);
+      });
+      match(Msg.Modules.ModulesBuildEndNotification, () => {
         setTimeout(() => this.down.next(new Msg.Project.ProjectStartRequest(this.id, this)), 0);
       });
     });
@@ -72,12 +77,24 @@ export class Project implements Channel {
     this.down.next(new Msg.Modules.ModulesInstallRequest(this.id));
   }
 
+  build() {
+    this.down.next(new Msg.Modules.ModulesBuildRequest(this.id));
+  }
+
   start() {
     this.down.next(new Msg.Modules.ModulesStartRequest(this.id));
   }
 
+  stop() {
+    this.down.next(new Msg.Modules.ModulesStopRequest(this.id));
+  }
+
   open() {
-    // Not implemented yet
+    this.up.next(new Msg.Project.ProjectOpenNotification(this.id, this.id));
+  }
+
+  close() {
+    this.up.next(new Msg.Project.ProjectCloseNotification(this.id, this.id));
   }
 
   remove() {

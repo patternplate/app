@@ -5,7 +5,7 @@ import {merge} from 'rxjs/observable/merge';
 import {action, observable, computed} from "mobx";
 import * as Msg from "../messages";
 import {ProjectViewModel} from "./project";
-import {Project, ProjectState} from "../models/project";
+import {Project} from "../models/project";
 
 const gitUrlParse = require("git-url-parse");
 
@@ -20,6 +20,8 @@ export class StartViewModel {
   /* Known patternplate projects */
   @observable projects: ProjectViewModel[] = [];
 
+  /* Currently active webview src */
+  @observable src: null | string;
 
   @computed get valid(): boolean {
     if (this.input.length === 0) {
@@ -62,6 +64,15 @@ export class StartViewModel {
       this.projects.splice(index, 1);
     });
 
+    match(Msg.Project.ProjectOpenNotification, () => {
+      const project = this.projects.find(p => p.model.id === message.id);
+      this.setSrc(`http://localhost:${project.port}`);
+    });
+
+    match(Msg.Project.ProjectCloseNotification, () => {
+      this.setSrc(null);
+    });
+
     this.store.set("projects", this.projects.map(p => {
       return {
         id: p.model.id,
@@ -100,5 +111,9 @@ export class StartViewModel {
 
   @action setInput(input: string) {
     this.input = input;
+  }
+
+  @action setSrc(src: string) {
+    this.src = src;
   }
 }
