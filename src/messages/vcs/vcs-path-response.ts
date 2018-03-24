@@ -1,7 +1,11 @@
-import {VCSBaseMessage} from "./vcs-base";
+import {Message} from "../message";
 
-export class VCSPathResponse extends VCSBaseMessage {
+export class VCSPathResponse extends Message {
   public readonly path: string;
+
+  static is(input: any) {
+    return input instanceof VCSPathResponse;
+  }
 
   constructor(tid: string, path: string) {
     super(tid);

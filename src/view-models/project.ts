@@ -1,4 +1,5 @@
-import {VCSProgressMessage, VCSCloneStartMessage, VCSCloneEndMessage, VCSErrorMessage, VCSRemoveRequest, VCSRemoveResponse} from "../messages/vcs";
+// import {VCSProgressNotification, VCSCloneStartNotification, VCSCloneEndNotification, VCSErrorNotification, VCSRemoveRequest, VCSRemoveResponse} from "../messages/vcs";
+import * as Msg from "../messages"
 import {Project} from "../models/project";
 import {action, observable} from "mobx";
 
@@ -23,51 +24,41 @@ export class ProjectViewModel {
   constructor(project: Project) {
     this.model = project;
 
-    this.model.subscribe((message: any) => {
-      if (message instanceof VCSCloneStartMessage) {
+    this.model.up.subscribe((message: any) => {
+      const match = Msg.match(message);
+
+      match(Msg.VCS.VCSCloneStartNotification, () => {
         this.setState(ProjectViewState.Fetching);
-      }
+      });
 
-      if (message instanceof VCSCloneEndMessage) {
+      match(Msg.VCS.VCSCloneEndNotification, () => {
         this.setState(ProjectViewState.Fetched);
-      }
+      });
 
-      if (message instanceof VCSErrorMessage) {
+      match(Msg.VCS.VCSErrorNotification, () => {
         this.setState(ProjectViewState.Errored);
-      }
+      });
 
-      if (message instanceof VCSRemoveRequest) {
+      match(Msg.VCS.VCSRemoveRequest, () => {
         this.setState(ProjectViewState.Removing);
-      }
+      });
 
-      if (message instanceof VCSRemoveResponse) {
+      match(Msg.VCS.VCSRemoveResponse, () => {
         this.setState(ProjectViewState.Removed);
-      }
+      });
     });
 
-    this.model.subscribe((message: any) => {
-      if (message instanceof VCSCloneStartMessage) {
-        this.setProgress(0);
-      }
+    this.model.up.subscribe((message: any) => {
+      const match = Msg.match(message);
 
-      if (message instanceof VCSCloneEndMessage) {
-        this.setProgress(1);
-      }
+      match(Msg.VCS.VCSCloneStartNotification, () => this.setProgress(0));
+      match(Msg.VCS.VCSCloneEndNotification, () => this.setProgress(1));
+      match(Msg.VCS.VCSErrorNotification, () => this.setProgress(0));
 
-      if (message instanceof VCSErrorMessage) {
-        this.setProgress(0);
-      }
-
-      if (message instanceof VCSProgressMessage) {
-        const {transferProgress} = message;
+      match(Msg.VCS.VCSProgressNotification, message => {
+        const {transferProgress} = (message as any);
         this.setProgress(transferProgress.receivedObjects() / transferProgress.totalObjects());
-      }
-    });
-
-    this.model.subscribe((message: any) => {
-      if (message instanceof VCSErrorMessage) {
-        this.setError(message.error);
-      }
+      });
     });
   }
 

@@ -1,21 +1,16 @@
+import * as Os from "os";
+import * as Path from "path";
 import {Observable, Subject} from "rxjs";
 import {merge} from 'rxjs/observable/merge';
 import {action, observable, computed} from "mobx";
+import * as Msg from "../messages";
 import {ProjectViewModel} from "./project";
-import {ProjectUnprocessedMessage} from "../messages/project";
-import {VCSRemoveResponse} from "../messages/vcs";
 import {Project, ProjectState} from "../models/project";
 
 const gitUrlParse = require("git-url-parse");
 
-export interface StartViewModelInit {
-  /* Initial value of the git url input */
-  input?: string;
-  /* Array of initially available patternplate projects */
-  projects?: ProjectViewModel[];
-}
-
 export class StartViewModel {
+  private store: any;
   private up: Observable<any> = new Subject();
   private down: Observable<any> = new Subject();
 
@@ -41,24 +36,39 @@ export class StartViewModel {
     }
   }
 
-  constructor(init?: StartViewModelInit) {
-    if (init && init.hasOwnProperty("input")) {
-      this.input = init.input;
-    }
+  static from(store: any) {
+    return new StartViewModel(store);
+  }
 
-    if (init && init.hasOwnProperty("projects")) {
-      this.projects = init.projects;
+  constructor(store: any) {
+    this.store = store;
+
+    if (store.has("input")) {
+      this.input = store.get("input");
     }
   }
 
   onUpMessage(message: any) {
-    if (message instanceof VCSRemoveResponse) {
+    console.log('up', message);
+    const match = Msg.match(message);
+
+    match(Msg.VCS.VCSRemoveResponse, () => {
       const index = this.projects.findIndex(p => p.model.id === message.id);
+
       if (index === -1) {
         return;
       }
+
       this.projects.splice(index, 1);
-    }
+    });
+
+    this.store.set("projects", this.projects.map(p => {
+      return {
+        id: p.model.id,
+        url: p.model.url,
+        path: p.model.path
+      };
+    }));
   }
 
   onDownMessage(message: any) {
@@ -66,14 +76,17 @@ export class StartViewModel {
   }
 
   @action addProject(url: string) {
-    const previous = this.projects.find(p => p.model.repository.url === url);
+    const previous = this.projects.find(p => p.model.url === url);
 
     if (previous) {
       previous.highlight();
       return;
     }
 
-    const project = Project.fromUrl(url);
+    const project = Project.from({
+      url,
+      path: Path.join(Os.homedir(), "patternplate")
+    });
 
     this.up = merge(this.up, project.up);
     this.down = merge(this.down, project.down);
@@ -82,7 +95,7 @@ export class StartViewModel {
     this.down.subscribe(msg => this.onDownMessage(msg));
 
     this.projects.push(new ProjectViewModel(project));
-    project.process();
+    project.down.next(new Msg.Project.ProjectProcessRequest(project.id, project));
   }
 
   @action setInput(input: string) {

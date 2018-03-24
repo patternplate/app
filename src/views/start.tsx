@@ -37,7 +37,7 @@ export class Start extends React.Component<StartProps> {
               {
                 props.projects.map(p => (
                   <StyledProjectItem highlighted={p.highlighted} key={p.model.id}>
-                    <Text>{p.model.repository.url}</Text>
+                    <Text>{p.model.url}</Text>
                     <Text>{p.state}</Text>
                     <Text>{p.progress}</Text>
                     {

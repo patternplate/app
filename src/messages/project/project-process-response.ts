@@ -1,8 +1,12 @@
 import {Project} from "../../models/project";
-import {ProjectBaseMessage} from "./project-base-message";
+import {Message} from "../message";
 
-export class ProjectProcessingMessage extends ProjectBaseMessage {
+export class ProjectProcessResponse extends Message {
   public readonly project: Project;
+
+  static is(input: any) {
+    return input instanceof ProjectProcessResponse;
+  }
 
   constructor(tid: string, project: Project) {
     super(tid);

@@ -3,25 +3,11 @@ import * as Path from "path";
 import * as Crypto from "crypto";
 import { Subject } from "rxjs";
 import * as uuid from "uuid";
+import * as execa from "execa";
 
+import * as Msg from "../messages";
+import { Git, VersionControl } from "./git";
 import { Channel } from "./nextable";
-import { Repository } from "./repository";
-
-import {
-  ProjectBaseMessage,
-  ProjectUnprocessedMessage,
-  ProjectProcessingMessage
-} from "../messages/project";
-
-import {
-  VCSErrorMessage,
-  VCSCloneEndMessage,
-  VCSCloneStartMessage,
-  VCSBaseMessage,
-  VCSPathRequest,
-  VCSPathResponse,
-  VCSRemoveRequest
-} from "../messages/vcs";
 
 export enum ProjectState {
   Unprocessed = "UNPROCESSED",
@@ -35,59 +21,61 @@ export enum ProjectState {
 }
 
 export interface ProjectInit {
-  repository: Repository;
+  id?: string;
+  path: string;
+  url: string;
 }
 
 export class Project implements Channel {
-  private messages: (VCSBaseMessage | ProjectBaseMessage)[] = [];
+  private messages: (Msg.VCS.VCSMessage | Msg.Project.ProjectMessage)[] = [];
 
   public readonly id: string;
+  public readonly url: string;
+  public readonly path: string;
+  public readonly vcs: VersionControl;
+
   public readonly up: Subject<any> = new Subject();
   public readonly down: Subject<any> = new Subject();
 
-  repository: Repository;
-
-  static fromUrl(url: string) {
-    const project = new Project({
-      repository: Repository.fromUrl(url)
-    });
-
-    return project;
+  static from(init: ProjectInit) {
+    return new Project(init);
   }
 
   constructor(init: ProjectInit) {
-    this.repository = init.repository;
-    this.id = uuid.v4();
+    this.id = init.id || uuid.v4();
+    this.url = init.url;
+    this.path = init.path;
+    this.vcs = new Git(this);
 
-    this.up.subscribe((message: any) => {
-      if (message instanceof VCSPathRequest) {
-        this.down.next(
-          new VCSPathResponse(
-            message.tid,
-            Path.join(Os.homedir(), "patternplate")
-          )
-        );
-      }
+    this.down.subscribe((message: any) => {
+      const match = Msg.match(message);
+
+      match(Msg.Project.ProjectProcessRequest, () => {
+        this.process();
+      });
+
+      match(Msg.VCS.VCSCloneEndNotification, () =>
+        this.down.next(new Msg.Project.ProjectInstallRequest(this.id, this))
+      );
+
+      match(Msg.Project.ProjectInstallRequest, () => this.install());
     });
-
-    this.up.next(new ProjectUnprocessedMessage(this.id, this));
-  }
-
-  subscribe(fn: (payload: Project) => void) {
-    this.up.subscribe(fn);
-    this.down.subscribe(fn);
-    fn(this);
   }
 
   process() {
-    this.up.next(new ProjectProcessingMessage(this.id, this));
-    this.repository.clone(this);
+    this.down.next(new Msg.VCS.VCSCloneRequest(this.id, {
+      url: this.url,
+      path: this.path
+    }));
     return this;
   }
 
+  install() {
+//    const cp = execa("npm", ["install"], {cwd: this.repository.path});
+  }
+
   remove() {
-    this.down.next(new VCSRemoveRequest(this.id));
-    this.repository.remove(this);
+    this.down.next(new Msg.VCS.VCSRemoveRequest(this.id));
     return this;
   }
 }

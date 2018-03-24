@@ -1,4 +1,4 @@
-import {VCSBaseMessage} from "./vcs-base";
+import {Message} from "../message";
 
 export interface TransferProgress {
   indexedDeltas(): number;
@@ -10,8 +10,12 @@ export interface TransferProgress {
   totalObjects(): number;
 }
 
-export class VCSProgressMessage extends VCSBaseMessage {
+export class VCSProgressNotification extends Message {
   public readonly transferProgress: TransferProgress;
+
+  static is(input: any) {
+    return input instanceof VCSProgressNotification;
+  }
 
   constructor(tid: string, p: any) {
     super(tid);

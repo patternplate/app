@@ -7,10 +7,13 @@ import { Provider } from "mobx-react";
 import { App } from "./app";
 import { StartViewModel } from "./view-models/start";
 
+const Store = require("electron-store");
 
 async function main() {
+  const store = new Store();
   const el = document.querySelector("[data-mount]");
-  const start = new StartViewModel();
+
+  const start = StartViewModel.from(store);
 
   try {
     ReactDOM.render(
