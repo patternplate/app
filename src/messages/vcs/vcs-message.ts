@@ -11,6 +11,8 @@ export class VCSMessage extends Message {
       Messages.VCSProgressNotification.is(input) ||
       Messages.VCSRemoveRequest.is(input) ||
       Messages.VCSRemoveResponse.is(input) ||
-      Messages.VCSRetryNotification.is(input);
+      Messages.VCSRetryNotification.is(input) ||
+      Messages.VCSRemoveStartNotification.is(input) ||
+      Messages.VCSRemoveEndNotification.is(input);
   }
 };

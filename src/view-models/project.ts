@@ -41,11 +41,11 @@ export class ProjectViewModel {
         this.setState(ProjectViewState.Errored);
       });
 
-      match(Msg.VCS.VCSRemoveRequest, () => {
+      match(Msg.VCS.VCSRemoveStartNotification, () => {
         this.setState(ProjectViewState.Removing);
       });
 
-      match(Msg.VCS.VCSRemoveResponse, () => {
+      match(Msg.VCS.VCSRemoveEndNotification, () => {
         this.setState(ProjectViewState.Removed);
       });
 

@@ -93,7 +93,12 @@ export class Git<T extends VersionControllable> implements VersionControl {
   }
 
   remove() {
+    this.host.up.next(new VCS.VCSRemoveStartNotification(this.host.id));
+
     sander.rimraf(this.host.path)
-      .then(() => this.host.up.next(new VCS.VCSRemoveResponse(this.host.id, (this.host as any).id)));
+      .then(() => {
+        this.host.up.next(new VCS.VCSRemoveEndNotification(this.host.id));
+        this.host.up.next(new VCS.VCSRemoveResponse(this.host.id, (this.host as any).id));
+      });
   }
 }
