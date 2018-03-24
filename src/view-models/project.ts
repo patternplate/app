@@ -7,6 +7,8 @@ export enum ProjectViewState {
   Unknown = "UNKNOW",
   Fetching = "FETCHING",
   Fetched = "FETCHED",
+  Installing = "INSTALLING",
+  Installed = "INSTALLED",
   Errored = "ERRORED",
   Removing = "REMOVING",
   Removed = "REMOVED",
@@ -45,6 +47,18 @@ export class ProjectViewModel {
 
       match(Msg.VCS.VCSRemoveResponse, () => {
         this.setState(ProjectViewState.Removed);
+      });
+
+      match(Msg.Modules.ModulesInstallStartNotification, () => {
+        this.setState(ProjectViewState.Installing);
+      });
+
+      match(Msg.Modules.ModulesInstallEndNotification, () => {
+        this.setState(ProjectViewState.Installed);
+      });
+
+      match(Msg.Modules.ModulesInstallErrorNotification, () => {
+        this.setState(ProjectViewState.Errored);
       });
     });
 

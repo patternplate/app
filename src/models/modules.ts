@@ -46,8 +46,9 @@ export class Modules<T extends Installable> {
     });
 
     cp.then((result) => {
-      console.log({result});
+      this.host.up.next(new Msg.Modules.ModulesInstallEndNotification(id));
     }).catch((err) => {
+      this.host.up.next(new Msg.Modules.ModulesInstallErrorNotification(id));
       console.log({err});
     });
   }
