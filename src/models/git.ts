@@ -45,18 +45,15 @@ export class Git<T extends VersionControllable> implements VersionControl {
       path: this.host.path
     }));
 
-    const parsed = gitUrlParse(host.url);
-    const path = Path.join(host.path, parsed.owner, parsed.name);
-
-    if (!await sander.exists(Path.dirname(path))) {
-      await sander.mkdir(Path.dirname(path));
+    if (!await sander.exists(Path.dirname(host.path))) {
+      await sander.mkdir(Path.dirname(host.path));
     }
 
-    if (await sander.exists(path)) {
-      await sander.rimraf(path);
+    if (await sander.exists(host.path)) {
+      await sander.rimraf(host.path);
     }
 
-    nodegit.Clone(this.host.url, path, {
+    nodegit.Clone(this.host.url, host.path, {
       fetchOpts: {
         callbacks: {
           transferProgress(p: any) {
@@ -96,9 +93,7 @@ export class Git<T extends VersionControllable> implements VersionControl {
   }
 
   remove() {
-    const parsed = gitUrlParse(this.host.url);
-
-    sander.rimraf(this.host.path, parsed.owner, parsed.name)
+    sander.rimraf(this.host.path)
       .then(() => this.host.up.next(new VCS.VCSRemoveResponse(this.host.id, (this.host as any).id)));
   }
 }

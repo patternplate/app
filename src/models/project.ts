@@ -7,7 +7,10 @@ import * as execa from "execa";
 
 import * as Msg from "../messages";
 import { Git, VersionControl } from "./git";
+import { Modules } from "./modules";
 import { Channel } from "./nextable";
+
+const gitUrlParse = require("git-url-parse");
 
 export enum ProjectState {
   Unprocessed = "UNPROCESSED",
@@ -33,6 +36,7 @@ export class Project implements Channel {
   public readonly url: string;
   public readonly path: string;
   public readonly vcs: VersionControl;
+  public readonly modules: Modules<Project>;
 
   public readonly up: Subject<any> = new Subject();
   public readonly down: Subject<any> = new Subject();
@@ -42,23 +46,25 @@ export class Project implements Channel {
   }
 
   constructor(init: ProjectInit) {
+    const parsed = gitUrlParse(init.url);
+
     this.id = init.id || uuid.v4();
     this.url = init.url;
-    this.path = init.path;
+    this.path = Path.join(init.path, parsed.owner, parsed.pathname);
     this.vcs = new Git(this);
+    this.modules = new Modules(this);
 
     this.down.subscribe((message: any) => {
       const match = Msg.match(message);
-
-      match(Msg.Project.ProjectProcessRequest, () => {
-        this.process();
-      });
-
-      match(Msg.VCS.VCSCloneEndNotification, () =>
-        this.down.next(new Msg.Project.ProjectInstallRequest(this.id, this))
-      );
-
+      match(Msg.Project.ProjectProcessRequest, () => this.process());
       match(Msg.Project.ProjectInstallRequest, () => this.install());
+    });
+
+    this.up.subscribe((message: any) => {
+      const match = Msg.match(message);
+      match(Msg.VCS.VCSCloneEndNotification, () => {
+        this.down.next(new Msg.Project.ProjectInstallRequest(this.id, this))
+      });
     });
   }
 
@@ -67,11 +73,10 @@ export class Project implements Channel {
       url: this.url,
       path: this.path
     }));
-    return this;
   }
 
   install() {
-//    const cp = execa("npm", ["install"], {cwd: this.repository.path});
+    this.down.next(new Msg.Modules.ModulesInstallRequest(this.id));
   }
 
   remove() {
