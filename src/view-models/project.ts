@@ -12,7 +12,8 @@ export enum ProjectViewState {
   Errored = "ERRORED",
   Removing = "REMOVING",
   Removed = "REMOVED",
-  Ready = "READY"
+  Ready = "READY",
+  Running = "RUNNING"
 }
 
 export class ProjectViewModel {

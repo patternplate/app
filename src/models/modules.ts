@@ -10,6 +10,7 @@ const resolveBin = require("resolve-bin");
 
 const YARN = Path.join(__dirname, "..", "..", "node_modules", ".bin", "yarn");
 const NPM = Path.join(__dirname, "..", "..", "node_modules", ".bin", "npm");
+const PATTERNPLATE = Path.join(__dirname, "..", "..", "node_modules", ".bin", "npm");
 
 export interface Installable extends Channel {
   id: string;
@@ -27,11 +28,12 @@ export class Modules<T extends Installable> {
 
     this.host.down.subscribe((message: any) => {
       const match = Msg.match(message);
-      match(Msg.Modules.ModulesInstallRequest, (req) => this.install());
+      match(Msg.Modules.ModulesInstallRequest, () => this.install());
+      match(Msg.Modules.ModulesStartRequest, () => this.start());
     });
   }
 
-  public install() {
+  private install() {
     const id = uuid.v4();
     this.host.up.next(new Msg.Modules.ModulesInstallStartNotification(id));
 
@@ -50,6 +52,21 @@ export class Modules<T extends Installable> {
     }).catch((err) => {
       this.host.up.next(new Msg.Modules.ModulesInstallErrorNotification(id));
       console.log({err});
+    });
+  }
+
+  private start() {
+    const id = uuid.v4();
+    this.host.up.next(new Msg.Modules.ModulesStartStartNotification(id));
+
+    const cp = execa(this.installer, ["start"], {cwd: this.host.path});
+
+    cp.stderr.on("data", (data) => {
+      console.log(String(data));
+    });
+
+    cp.stdout.on("data", (data) => {
+      console.log(String(data));
     });
   }
 }

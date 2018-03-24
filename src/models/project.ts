@@ -12,17 +12,6 @@ import { Channel } from "./nextable";
 
 const gitUrlParse = require("git-url-parse");
 
-export enum ProjectState {
-  Unprocessed = "UNPROCESSED",
-  Processing = "PROCESSING",
-  Fetching = "FETCHING",
-  Fetched = "FETCHED",
-  NeedsInstall = "NEEDS_INSTALL",
-  Installed = "INSTALLED",
-  Error = "ERROR",
-  Undefined = "UNDEFINED"
-}
-
 export interface ProjectInit {
   id?: string;
   path: string;
@@ -58,12 +47,16 @@ export class Project implements Channel {
       const match = Msg.match(message);
       match(Msg.Project.ProjectProcessRequest, () => this.process());
       match(Msg.Project.ProjectInstallRequest, () => this.install());
+      match(Msg.Project.ProjectStartRequest, () => this.start());
     });
 
     this.up.subscribe((message: any) => {
       const match = Msg.match(message);
       match(Msg.VCS.VCSCloneEndNotification, () => {
-        this.down.next(new Msg.Project.ProjectInstallRequest(this.id, this))
+        setTimeout(() => this.down.next(new Msg.Project.ProjectInstallRequest(this.id, this)), 0);
+      });
+      match(Msg.Modules.ModulesInstallEndNotification, () => {
+        setTimeout(() => this.down.next(new Msg.Project.ProjectStartRequest(this.id, this)), 0);
       });
     });
   }
@@ -79,8 +72,15 @@ export class Project implements Channel {
     this.down.next(new Msg.Modules.ModulesInstallRequest(this.id));
   }
 
+  start() {
+    this.down.next(new Msg.Modules.ModulesStartRequest(this.id));
+  }
+
+  open() {
+    // Not implemented yet
+  }
+
   remove() {
     this.down.next(new Msg.VCS.VCSRemoveRequest(this.id));
-    return this;
   }
 }

@@ -47,15 +47,15 @@ export class Start extends React.Component<StartProps> {
                     }
                     <button
                       type="button"
-                      disabled={p.state === ProjectViewState.Fetching}
+                      disabled={p.state === ProjectViewState.Fetching || p.state === ProjectViewState.Installing || p.state === ProjectViewState.Running}
                       onClick={() => p.model.remove()}
                       >
                       Remove
                     </button>
                     <button
                       type="button"
-                      disabled={p.state !== ProjectViewState.Ready}
-                      onClick={() => p.model.remove()}
+                      disabled={p.state !== ProjectViewState.Running}
+                      onClick={() => p.model.open()}
                       >
                       Open
                     </button>
