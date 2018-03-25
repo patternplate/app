@@ -50,14 +50,14 @@ export class Start extends React.Component<StartProps> {
                     }
                     <button
                       type="button"
-                      disabled={p.state === ProjectViewState.Fetching || p.state === ProjectViewState.Installing || p.state === ProjectViewState.Starting}
+                      disabled={p.inTransition() ||  p.lt(ProjectViewState.Fetched)}
                       onClick={() => p.model.remove()}
                       >
                       Remove
                     </button>
                     <button
                       type="button"
-                      disabled={p.state === ProjectViewState.Starting || p.state === ProjectViewState.Stopping}
+                      disabled={p.inTransition() || p.lt(ProjectViewState.Started)}
                       onClick={ProjectViewState.Started ? () => p.model.stop(): () => p.model.start()}
                       >
                       {ProjectViewState.Started ? "Stop": "Start"}

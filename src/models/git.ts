@@ -38,16 +38,41 @@ export class Git<T extends VersionControllable> implements VersionControl {
 
   async analyse() {
     if (!await sander.exists(this.host.path)) {
-      this.host.up.next(new VCS.VCSAnalyseResponse(this.host.id, {
+      return this.host.up.next(new VCS.VCSAnalyseResponse(this.host.id, {
         exists: false,
         hash: null
       }));
-      return;
     }
 
     const repo = await nodegit.Repository.open(this.host.path);
+
+    if (!repo) {
+      this.remove();
+      return this.host.up.next(new VCS.VCSAnalyseResponse(this.host.id, {
+        exists: false,
+        hash: null
+      }));
+    }
+
     const head = await repo.getHeadCommit();
+
+    if (!head) {
+      this.remove();
+      return this.host.up.next(new VCS.VCSAnalyseResponse(this.host.id, {
+        exists: false,
+        hash: null
+      }));
+    }
+
     const hash = await head.sha();
+
+    if (!hash) {
+      this.remove();
+      return this.host.up.next(new VCS.VCSAnalyseResponse(this.host.id, {
+        exists: false,
+        hash: null
+      }));
+    }
 
     this.host.up.next(new VCS.VCSAnalyseResponse(this.host.id, {
       exists: true,

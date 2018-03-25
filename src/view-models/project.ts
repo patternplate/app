@@ -18,14 +18,34 @@ export enum ProjectViewState {
   Errored = "ERRORED",
   Removing = "REMOVING",
   Removed = "REMOVED",
-  Ready = "READY",
 }
+
+const STATE_ORDER = [
+  ProjectViewState.Unknown,
+  ProjectViewState.Fetching,
+  ProjectViewState.Fetched,
+  ProjectViewState.Building,
+  ProjectViewState.Built,
+  ProjectViewState.Installing,
+  ProjectViewState.Installed,
+  ProjectViewState.Starting,
+  ProjectViewState.Started,
+  ProjectViewState.Stopped
+];
+
+const TRANSITION_STATES = [
+  ProjectViewState.Fetching,
+  ProjectViewState.Building,
+  ProjectViewState.Installing,
+  ProjectViewState.Stopping,
+  ProjectViewState.Removing
+];
 
 export class ProjectViewModel {
   public readonly model: Project;
 
   @observable error: Error;
-  @observable state: string = ProjectViewState.Unknown;
+  @observable state: ProjectViewState = ProjectViewState.Unknown;
   @observable progress: number;
   @observable highlighted: boolean;
   @observable port: number = 0;
@@ -125,11 +145,32 @@ export class ProjectViewModel {
     });
   }
 
+  inTransition(): boolean {
+    return TRANSITION_STATES.indexOf(this.state) > -1;
+  }
+
+  lt(cmp: ProjectViewState): boolean {
+    console.log({cmp, s: this.state, i: STATE_ORDER.indexOf(cmp)});
+    return STATE_ORDER.indexOf(this.state) < STATE_ORDER.indexOf(cmp);
+  }
+
+  lte(cmp: ProjectViewState): boolean {
+    return STATE_ORDER.indexOf(this.state) <= STATE_ORDER.indexOf(cmp);
+  }
+
+  gt(cmp: ProjectViewState): boolean {
+    return STATE_ORDER.indexOf(this.state) > STATE_ORDER.indexOf(cmp);
+  }
+
+  gte(cmp: ProjectViewState): boolean {
+    return STATE_ORDER.indexOf(this.state) >= STATE_ORDER.indexOf(cmp);
+  }
+
   @action setError(err: Error) {
     this.error = err;
   }
 
-  @action setState(state: string) {
+  @action setState(state: ProjectViewState) {
     this.state = state;
   }
 
