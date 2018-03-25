@@ -36,6 +36,15 @@ export class ProjectViewModel {
     this.model.up.subscribe((message: any) => {
       const match = Msg.match(message);
 
+      match(Msg.VCS.VCSAnalyseResponse, (resp: any) => {
+        if (!resp.exists) {
+          this.setState(ProjectViewState.Removed);
+          return;
+        }
+
+        this.setState(ProjectViewState.Fetched);
+      });
+
       match(Msg.VCS.VCSCloneStartNotification, () => {
         this.setState(ProjectViewState.Fetching);
       });

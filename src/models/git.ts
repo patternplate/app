@@ -30,9 +30,29 @@ export class Git<T extends VersionControllable> implements VersionControl {
     this.host.down.subscribe((message: any) => {
       const match = Msg.match(message);
 
+      match(Msg.VCS.VCSAnalyseRequest, () => this.analyse());
       match(Msg.VCS.VCSCloneRequest, () => this.clone());
       match(Msg.VCS.VCSRemoveRequest, () => this.remove());
     });
+  }
+
+  async analyse() {
+    if (!await sander.exists(this.host.path)) {
+      this.host.up.next(new VCS.VCSAnalyseResponse(this.host.id, {
+        exists: false,
+        hash: null
+      }));
+      return;
+    }
+
+    const repo = await nodegit.Repository.open(this.host.path);
+    const head = await repo.getHeadCommit();
+    const hash = await head.sha();
+
+    this.host.up.next(new VCS.VCSAnalyseResponse(this.host.id, {
+      exists: true,
+      hash
+    }));
   }
 
   async clone() {

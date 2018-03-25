@@ -6,3 +6,4 @@ export {ProjectStartRequest} from "./project-start-request";
 export {ProjectBuildRequest} from "./project-build-request";
 export {ProjectOpenNotification} from "./project-open-notification";
 export {ProjectCloseNotification} from "./project-close-notification";
+export {ProjectAnalyseRequest} from "./project-analyse-request";

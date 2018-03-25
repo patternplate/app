@@ -37,10 +37,9 @@ export class Project implements Channel {
 
   constructor(init: ProjectInit) {
     const parsed = gitUrlParse(init.url);
-
     this.id = init.id || uuid.v4();
     this.url = init.url;
-    this.path = Path.join(init.path, parsed.owner, parsed.pathname);
+    this.path = Path.resolve(init.path, parsed.full_name.split("/").join(Path.sep));
     this.vcs = new Git(this);
     this.modules = new Modules(this);
 
@@ -50,6 +49,7 @@ export class Project implements Channel {
       match(Msg.Project.ProjectInstallRequest, () => this.install());
       match(Msg.Project.ProjectBuildRequest, () => this.build());
       match(Msg.Project.ProjectStartRequest, () => this.start());
+      match(Msg.Project.ProjectAnalyseRequest, () => this.analyse());
     });
 
     this.up.subscribe((message: any) => {
@@ -71,6 +71,10 @@ export class Project implements Channel {
       url: this.url,
       path: this.path
     }));
+  }
+
+  analyse() {
+    this.down.next(new Msg.VCS.VCSAnalyseRequest(this.id));
   }
 
   install() {

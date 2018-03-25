@@ -10,5 +10,7 @@ export {VCSRemoveRequest} from "./vcs-remove-request";
 export {VCSRemoveStartNotification} from "./vcs-remove-start-notification";
 export {VCSRemoveEndNotification} from "./vcs-remove-end-notification";
 export {VCSRemoveResponse} from "./vcs-remove-response";
+export {VCSAnalyseRequest} from "./vcs-analyse-request";
+export {VCSAnalyseResponse} from "./vcs-analyse-response";
 export {VCSMessage} from "./vcs-message";
 export {Message} from "../message";

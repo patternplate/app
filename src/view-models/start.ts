@@ -7,7 +7,14 @@ import * as Msg from "../messages";
 import {ProjectViewModel} from "./project";
 import {Project} from "../models/project";
 
+const ARSON = require("arson");
 const gitUrlParse = require("git-url-parse");
+
+export class StartViewModelInit {
+  input?: string;
+  projects?: ProjectViewModel[];
+  store: any;
+}
 
 export class StartViewModel {
   private store: any;
@@ -39,14 +46,39 @@ export class StartViewModel {
   }
 
   static from(store: any) {
-    return new StartViewModel(store);
+    return new StartViewModel({
+      input: store.get("input"),
+      projects: store.get("projects")
+        .map((serialized: any) => {
+          const data = ARSON.parse(serialized);
+          const project = Project.from({
+            url: data.url,
+            path: Path.join(Os.homedir(), "patternplate")
+          });
+          project.down.next(new Msg.Project.ProjectAnalyseRequest(project.id));
+          return new ProjectViewModel(project);
+        }),
+      store
+    });
   }
 
-  constructor(store: any) {
-    this.store = store;
+  constructor(init: StartViewModelInit) {
+    this.store = init.store;
 
-    if (store.has("input")) {
-      this.input = store.get("input");
+    if (init.hasOwnProperty("input") && typeof init.input === "string") {
+      this.input = init.input;
+    }
+
+    if (init.hasOwnProperty("projects") && Array.isArray(init.projects)) {
+      this.projects = init.projects;
+
+      this.projects.forEach(project => {
+        this.up = merge(this.up, project.model.up);
+        this.down = merge(this.down, project.model.down);
+
+        this.up.subscribe(msg => this.onUpMessage(msg));
+        this.down.subscribe(msg => this.onDownMessage(msg));
+      });
     }
   }
 
@@ -73,13 +105,7 @@ export class StartViewModel {
       this.setSrc(null);
     });
 
-    this.store.set("projects", this.projects.map(p => {
-      return {
-        id: p.model.id,
-        url: p.model.url,
-        path: p.model.path
-      };
-    }));
+    this.store.set("projects", this.projects.map(p => ARSON.stringify(p.model)));
   }
 
   onDownMessage(message: any) {
@@ -110,6 +136,9 @@ export class StartViewModel {
   }
 
   @action setInput(input: string) {
+    if (this.valid) {
+      this.store.set("input", input);
+    }
     this.input = input;
   }
 
