@@ -9,6 +9,8 @@ export class ProjectMessage extends Message {
       Messages.ProjectProcessResponse.is(input) ||
       Messages.ProjectStartRequest.is(input) ||
       Messages.ProjectOpenNotification.is(input) ||
-      Messages.ProjectCloseNotification.is(input);
+      Messages.ProjectCloseNotification.is(input) ||
+      Messages.ProjectAnalyseRequest.is(input) ||
+      Messages.ProjectAnalyseResponse.is(input);
   }
 };

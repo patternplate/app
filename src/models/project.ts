@@ -17,6 +17,7 @@ export interface ProjectInit {
   id?: string;
   path: string;
   url: string;
+  previous: { [key: string]: any };
 }
 
 export class Project implements Channel {
@@ -27,6 +28,7 @@ export class Project implements Channel {
   public readonly path: string;
   public readonly vcs: VersionControl;
   public readonly modules: Modules<Project>;
+  public readonly previous: any;
 
   public readonly up: Subject<any> = new Subject();
   public readonly down: Subject<any> = new Subject();
@@ -42,6 +44,7 @@ export class Project implements Channel {
     this.path = Path.resolve(init.path, parsed.full_name.split("/").join(Path.sep));
     this.vcs = new Git(this);
     this.modules = new Modules(this);
+    this.previous = init.previous;
 
     this.down.subscribe((message: any) => {
       const match = Msg.match(message);
@@ -54,15 +57,36 @@ export class Project implements Channel {
 
     this.up.subscribe((message: any) => {
       const match = Msg.match(message);
+
+      match(Msg.VCS.VCSAnalyseResponse, (resp: any) => {
+        // Reinitialize project if missing from disk
+        if (!resp.exists) {
+          return this.process();
+        }
+
+        if (!resp.synced) {
+          this.fetch();
+        }
+
+        this.up.next(new Msg.Project.ProjectAnalyseResponse(message.tid, {
+          synced: true,
+          installed: true,
+          diff: resp.diff
+        }))
+      });
+
       match(Msg.VCS.VCSCloneEndNotification, () => {
         setTimeout(() => this.down.next(new Msg.Project.ProjectInstallRequest(this.id, this)), 0);
       });
+
       match(Msg.Modules.ModulesInstallEndNotification, () => {
         setTimeout(() => this.down.next(new Msg.Project.ProjectBuildRequest(this.id, this)), 0);
       });
+
       match(Msg.Modules.ModulesBuildEndNotification, () => {
         setTimeout(() => this.down.next(new Msg.Project.ProjectStartRequest(this.id, this)), 0);
       });
+
     });
   }
 
@@ -71,6 +95,10 @@ export class Project implements Channel {
       url: this.url,
       path: this.path
     }));
+  }
+
+  fetch() {
+    this.down.next(new Msg.VCS.VCSFetchRequest(this.id));
   }
 
   analyse() {

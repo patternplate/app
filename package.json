@@ -54,6 +54,7 @@
     "mobx-react": "^5.0.0",
     "node-git": "^0.0.0",
     "nodegit": "^0.21.2",
+    "nodegit-kit": "^0.17.0",
     "npm": "^5.8.0",
     "patternplate": "^2.0.0-88",
     "prettier": "^1.11.1",

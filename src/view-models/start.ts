@@ -52,8 +52,9 @@ export class StartViewModel {
         .map((serialized: any) => {
           const data = ARSON.parse(serialized);
           const project = Project.from({
-            url: data.url,
-            path: Path.join(Os.homedir(), "patternplate")
+            url: data.model.url,
+            path: Path.join(Os.homedir(), "patternplate"),
+            previous: data
           });
           project.down.next(new Msg.Project.ProjectAnalyseRequest(project.id));
           return new ProjectViewModel(project);
@@ -105,7 +106,7 @@ export class StartViewModel {
       this.setSrc(null);
     });
 
-    this.store.set("projects", this.projects.map(p => ARSON.stringify(p.model)));
+    this.store.set("projects", this.projects.map(p => ARSON.stringify(p)));
   }
 
   onDownMessage(message: any) {
@@ -122,7 +123,8 @@ export class StartViewModel {
 
     const project = Project.from({
       url,
-      path: Path.join(Os.homedir(), "patternplate")
+      path: Path.join(Os.homedir(), "patternplate"),
+      previous: null
     });
 
     this.up = merge(this.up, project.up);

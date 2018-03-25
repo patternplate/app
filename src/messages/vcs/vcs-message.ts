@@ -15,6 +15,7 @@ export class VCSMessage extends Message {
       Messages.VCSRemoveStartNotification.is(input) ||
       Messages.VCSRemoveEndNotification.is(input) ||
       Messages.VCSAnalyseRequest.is(input) ||
-      Messages.VCSAnalyseResponse.is(input);
+      Messages.VCSAnalyseResponse.is(input) ||
+      Messages.VCSFetchRequest.is(input);
   }
 };

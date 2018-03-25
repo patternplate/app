@@ -12,5 +12,8 @@ export {VCSRemoveEndNotification} from "./vcs-remove-end-notification";
 export {VCSRemoveResponse} from "./vcs-remove-response";
 export {VCSAnalyseRequest} from "./vcs-analyse-request";
 export {VCSAnalyseResponse} from "./vcs-analyse-response";
+export {VCSFetchRequest} from "./vcs-fetch-request";
+export {VCSFetchStartNotification} from "./vcs-fetch-start-notification";
+export {VCSFetchEndNotification} from "./vcs-fetch-end-notification";
 export {VCSMessage} from "./vcs-message";
 export {Message} from "../message";

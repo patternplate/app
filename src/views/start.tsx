@@ -57,10 +57,31 @@ export class Start extends React.Component<StartProps> {
                     </button>
                     <button
                       type="button"
-                      disabled={p.inTransition() || p.lt(ProjectViewState.Started)}
-                      onClick={ProjectViewState.Started ? () => p.model.stop(): () => p.model.start()}
+                      disabled={p.state !== ProjectViewState.Errored}
+                      onClick={() => p.model.process()}
                       >
-                      {ProjectViewState.Started ? "Stop": "Start"}
+                      Retry
+                    </button>
+                    <button
+                      type="button"
+                      disabled={p.state !== ProjectViewState.Fetched}
+                      onClick={() => p.model.install()}
+                      >
+                      Install
+                    </button>
+                    <button
+                      type="button"
+                      disabled={p.state !== ProjectViewState.Installed}
+                      onClick={() => p.model.build()}
+                      >
+                      Build
+                    </button>
+                    <button
+                      type="button"
+                      disabled={p.inTransition() || p.lt(ProjectViewState.Built)}
+                      onClick={p.state === ProjectViewState.Started ? () => p.model.stop(): () => p.model.start()}
+                      >
+                      {p.state === ProjectViewState.Started ? "Stop": "Start"}
                     </button>
                     <button
                       type="button"

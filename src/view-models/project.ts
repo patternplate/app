@@ -41,6 +41,8 @@ const TRANSITION_STATES = [
   ProjectViewState.Removing
 ];
 
+const BUILT = STATE_ORDER.indexOf(ProjectViewState.Built);
+
 export class ProjectViewModel {
   public readonly model: Project;
 
@@ -56,20 +58,37 @@ export class ProjectViewModel {
     this.model.up.subscribe((message: any) => {
       const match = Msg.match(message);
 
-      match(Msg.VCS.VCSAnalyseResponse, (resp: any) => {
-        if (!resp.exists) {
-          this.setState(ProjectViewState.Removed);
-          return;
+      match(Msg.Project.ProjectAnalyseResponse, () => {
+        if (message.synced) {
+          this.setState(ProjectViewState.Fetched);
         }
+        if (message.installed) {
+          this.setState(ProjectViewState.Installed);
 
-        this.setState(ProjectViewState.Fetched);
-      });
+          const PREV_STATE = STATE_ORDER.indexOf(this.model.previous.state);
+
+          console.log(message);
+          // If no diff happened and the persisted model had been build
+          // assume the current state has a build, too
+          if (message.diff.length === 0 && PREV_STATE >= BUILT) {
+            this.setState(ProjectViewState.Built);
+          }
+        }
+      })
 
       match(Msg.VCS.VCSCloneStartNotification, () => {
         this.setState(ProjectViewState.Fetching);
       });
 
       match(Msg.VCS.VCSCloneEndNotification, () => {
+        this.setState(ProjectViewState.Fetched);
+      });
+
+      match(Msg.VCS.VCSFetchStartNotification, () => {
+        this.setState(ProjectViewState.Fetching);
+      });
+
+      match(Msg.VCS.VCSFetchEndNotification, () => {
         this.setState(ProjectViewState.Fetched);
       });
 
@@ -150,7 +169,6 @@ export class ProjectViewModel {
   }
 
   lt(cmp: ProjectViewState): boolean {
-    console.log({cmp, s: this.state, i: STATE_ORDER.indexOf(cmp)});
     return STATE_ORDER.indexOf(this.state) < STATE_ORDER.indexOf(cmp);
   }
 
