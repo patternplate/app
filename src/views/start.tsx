@@ -64,7 +64,7 @@ export class Start extends React.Component<StartProps> {
                     </button>
                     <button
                       type="button"
-                      disabled={p.state !== ProjectViewState.Fetched}
+                      disabled={p.inTransition()}
                       onClick={() => p.model.install()}
                       >
                       Install

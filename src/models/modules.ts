@@ -22,14 +22,11 @@ export interface Installable extends Channel {
 
 export class Modules<T extends Installable> {
   public readonly host: T;
-  public readonly installer: string;
 
   private cp: ChildProcess.ChildProcess;
 
   public constructor(host: T) {
     this.host = host;
-
-    this.installer = Fs.existsSync(Path.join(host.path, "yarn.lock")) ? YARN : NPM;
 
     this.host.down.subscribe((message: any) => {
       const match = Msg.match(message);
@@ -40,11 +37,18 @@ export class Modules<T extends Installable> {
     });
   }
 
+  private installer() {
+    return Fs.existsSync(Path.join(this.host.path, "yarn.lock")) ? YARN : NPM;
+  }
+
   private install() {
     const id = uuid.v4();
     this.host.up.next(new Msg.Modules.ModulesInstallStartNotification(id));
 
-    const cp = execa(this.installer, ["install", "--verbose"], {cwd: this.host.path});
+    const cp = execa(this.installer(), ["install", "--verbose"], {
+      cwd: this.host.path,
+      maxBuffer: Infinity
+    });
 
     cp.stderr.on("data", (data) => {
       console.log(String(data));
@@ -73,7 +77,7 @@ export class Modules<T extends Installable> {
       return;
     }
 
-    const cp = execa(this.installer, ["run", "build"], {cwd: this.host.path});
+    const cp = execa(this.installer(), ["run", "build"], {cwd: this.host.path});
 
     cp.stderr.on("data", (data) => {
       console.log(String(data));

@@ -78,15 +78,15 @@
     yargs-parser "^9.0.2"
     zen-observable "^0.7.1"
 
-"@patternplate/cli@^2.0.0-91":
-  version "2.0.0-91"
-  resolved "https://registry.yarnpkg.com/@patternplate/cli/-/cli-2.0.0-91.tgz#2d032fc7a3eebdaef7f5e8b7f11468d844c0f7ec"
+"@patternplate/cli@^2.0.0-92":
+  version "2.0.0-92"
+  resolved "https://registry.yarnpkg.com/@patternplate/cli/-/cli-2.0.0-92.tgz#57c71714119ff7dc9ccb942fa973ab7b0c9ac22d"
   dependencies:
-    "@patternplate/compiler" "^2.0.0-91"
-    "@patternplate/demo-client" "^2.0.0-91"
-    "@patternplate/probe-client" "^2.0.0-91"
-    "@patternplate/render-default" "^2.0.0-91"
-    "@patternplate/webpack-entry" "^2.0.0-91"
+    "@patternplate/compiler" "^2.0.0-92"
+    "@patternplate/demo-client" "^2.0.0-92"
+    "@patternplate/probe-client" "^2.0.0-92"
+    "@patternplate/render-default" "^2.0.0-92"
+    "@patternplate/webpack-entry" "^2.0.0-92"
     arson "^0.2.6"
     chalk "^2.3.2"
     command-exists "^1.2.2"
@@ -187,15 +187,15 @@
     webpack "3"
     webpack-node-externals "^1.6.0"
 
-"@patternplate/compiler@^2.0.0-91":
-  version "2.0.0-91"
-  resolved "https://registry.yarnpkg.com/@patternplate/compiler/-/compiler-2.0.0-91.tgz#d0ffab6538499e73091cef956565fec3dcafad21"
+"@patternplate/compiler@^2.0.0-92":
+  version "2.0.0-92"
+  resolved "https://registry.yarnpkg.com/@patternplate/compiler/-/compiler-2.0.0-92.tgz#a8dc98bd1f8174d83c1557a1c02b9d0df9418be6"
   dependencies:
-    "@patternplate/cover-client" "^2.0.0-91"
-    "@patternplate/demo-client" "^2.0.0-91"
-    "@patternplate/load-config" "^2.0.0-91"
-    "@patternplate/probe-client" "^2.0.0-91"
-    "@patternplate/webpack-entry" "^2.0.0-91"
+    "@patternplate/cover-client" "^2.0.0-92"
+    "@patternplate/demo-client" "^2.0.0-92"
+    "@patternplate/load-config" "^2.0.0-92"
+    "@patternplate/probe-client" "^2.0.0-92"
+    "@patternplate/webpack-entry" "^2.0.0-92"
     css-loader "^0.28.10"
     html-loader "^0.5.5"
     memory-fs "^0.4.1"
@@ -230,11 +230,11 @@
     styled-components "^3.1.6"
     tag-hoc "^1.0.0"
 
-"@patternplate/components@^2.0.0-91":
-  version "2.0.0-91"
-  resolved "https://registry.yarnpkg.com/@patternplate/components/-/components-2.0.0-91.tgz#d8e61a6ff839030a5305212cc8c1cfb89c600771"
+"@patternplate/components@^2.0.0-92":
+  version "2.0.0-92"
+  resolved "https://registry.yarnpkg.com/@patternplate/components/-/components-2.0.0-92.tgz#032af7b6d0094c9e3c2b553c4b434dc6a890a22f"
   dependencies:
-    "@patternplate/widgets" "^2.0.0-91"
+    "@patternplate/widgets" "^2.0.0-92"
     buble "^0.19.3"
     color "^2.0.0"
     front-matter "^2.3.0"
@@ -263,11 +263,11 @@
   dependencies:
     "@patternplate/websocket-client" "^2.0.0-88"
 
-"@patternplate/cover-client@^2.0.0-91":
-  version "2.0.0-91"
-  resolved "https://registry.yarnpkg.com/@patternplate/cover-client/-/cover-client-2.0.0-91.tgz#9680501266597d665fa8cbec0afb88c6fc05cf72"
+"@patternplate/cover-client@^2.0.0-92":
+  version "2.0.0-92"
+  resolved "https://registry.yarnpkg.com/@patternplate/cover-client/-/cover-client-2.0.0-92.tgz#a076900a480dc7879750e3b4c0658a20266df86f"
   dependencies:
-    "@patternplate/websocket-client" "^2.0.0-91"
+    "@patternplate/websocket-client" "^2.0.0-92"
 
 "@patternplate/demo-client@^2.0.0-88":
   version "2.0.0-88"
@@ -275,11 +275,11 @@
   dependencies:
     "@patternplate/websocket-client" "^2.0.0-88"
 
-"@patternplate/demo-client@^2.0.0-91":
-  version "2.0.0-91"
-  resolved "https://registry.yarnpkg.com/@patternplate/demo-client/-/demo-client-2.0.0-91.tgz#0a67f3a1e8196670b3c1832328c4de22ae00178a"
+"@patternplate/demo-client@^2.0.0-92":
+  version "2.0.0-92"
+  resolved "https://registry.yarnpkg.com/@patternplate/demo-client/-/demo-client-2.0.0-92.tgz#106c4fc244fadfd5a83e523a1622787fbbbf3a3b"
   dependencies:
-    "@patternplate/websocket-client" "^2.0.0-91"
+    "@patternplate/websocket-client" "^2.0.0-92"
 
 "@patternplate/load-config@^2.0.0-88":
   version "2.0.0-88"
@@ -287,9 +287,9 @@
   dependencies:
     cosmiconfig "^3.1.0"
 
-"@patternplate/load-config@^2.0.0-91":
-  version "2.0.0-91"
-  resolved "https://registry.yarnpkg.com/@patternplate/load-config/-/load-config-2.0.0-91.tgz#a937e49192a99e1a295e02e5ebbba23a03cc3a60"
+"@patternplate/load-config@^2.0.0-92":
+  version "2.0.0-92"
+  resolved "https://registry.yarnpkg.com/@patternplate/load-config/-/load-config-2.0.0-92.tgz#280edecad538aae159e17b2fee43ae216ca904ba"
   dependencies:
     cosmiconfig "^3.1.0"
 
@@ -358,17 +358,17 @@
     arson "^0.2.6"
     iframe-resizer "^3.5.16"
 
-"@patternplate/probe-client@^2.0.0-91":
-  version "2.0.0-91"
-  resolved "https://registry.yarnpkg.com/@patternplate/probe-client/-/probe-client-2.0.0-91.tgz#dd50cfad1c435fe7c986b172d9b1aa46aa235745"
+"@patternplate/probe-client@^2.0.0-92":
+  version "2.0.0-92"
+  resolved "https://registry.yarnpkg.com/@patternplate/probe-client/-/probe-client-2.0.0-92.tgz#1c9bec2362c818fb5b030e9586eff6228680de58"
   dependencies:
-    "@patternplate/websocket-client" "^2.0.0-91"
+    "@patternplate/websocket-client" "^2.0.0-92"
     arson "^0.2.6"
     iframe-resizer "^3.5.16"
 
-"@patternplate/render-default@^2.0.0-91":
-  version "2.0.0-91"
-  resolved "https://registry.yarnpkg.com/@patternplate/render-default/-/render-default-2.0.0-91.tgz#9f568ff8d51437494853b0aadec63f8cda225de2"
+"@patternplate/render-default@^2.0.0-92":
+  version "2.0.0-92"
+  resolved "https://registry.yarnpkg.com/@patternplate/render-default/-/render-default-2.0.0-92.tgz#24010a93669518519e14f8c7dfd5914ed98d10b1"
   dependencies:
     lodash "^4.17.5"
 
@@ -394,9 +394,9 @@
     raw-loader "^0.5.1"
     require-from-string "^2.0.1"
 
-"@patternplate/webpack-entry@^2.0.0-91":
-  version "2.0.0-91"
-  resolved "https://registry.yarnpkg.com/@patternplate/webpack-entry/-/webpack-entry-2.0.0-91.tgz#72cf230a139c561342b876c408016b4d82086359"
+"@patternplate/webpack-entry@^2.0.0-92":
+  version "2.0.0-92"
+  resolved "https://registry.yarnpkg.com/@patternplate/webpack-entry/-/webpack-entry-2.0.0-92.tgz#34bc9e56b623af36d717b4e76f12194870df1461"
   dependencies:
     glob-parent "^3.1.0"
     globby "^6.1.0"
@@ -410,9 +410,9 @@
   version "2.0.0-88"
   resolved "https://registry.yarnpkg.com/@patternplate/websocket-client/-/websocket-client-2.0.0-88.tgz#31441af91f5aabad0feadc0e2e5d74e39380431c"
 
-"@patternplate/websocket-client@^2.0.0-91":
-  version "2.0.0-91"
-  resolved "https://registry.yarnpkg.com/@patternplate/websocket-client/-/websocket-client-2.0.0-91.tgz#5b6d4891c52433b6995d819ad43d96d6452e66eb"
+"@patternplate/websocket-client@^2.0.0-92":
+  version "2.0.0-92"
+  resolved "https://registry.yarnpkg.com/@patternplate/websocket-client/-/websocket-client-2.0.0-92.tgz#2c272e14f3de3d51376cd497cb6232e0d9e04223"
 
 "@patternplate/widgets@^2.0.0-88":
   version "2.0.0-88"
@@ -420,11 +420,11 @@
   dependencies:
     "@patternplate/components" "^2.0.0-88"
 
-"@patternplate/widgets@^2.0.0-91":
-  version "2.0.0-91"
-  resolved "https://registry.yarnpkg.com/@patternplate/widgets/-/widgets-2.0.0-91.tgz#f0d0dd0939fd9a7ef7ebbd6cfb3b6fd3296ef704"
+"@patternplate/widgets@^2.0.0-92":
+  version "2.0.0-92"
+  resolved "https://registry.yarnpkg.com/@patternplate/widgets/-/widgets-2.0.0-92.tgz#5d2f2261cbc5ef8684b2b77288661cb4a37ad685"
   dependencies:
-    "@patternplate/components" "^2.0.0-91"
+    "@patternplate/components" "^2.0.0-92"
 
 "@types/body-parser@*":
   version "1.16.8"
