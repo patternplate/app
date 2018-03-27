@@ -3,6 +3,8 @@ import installExtension, { REACT_DEVELOPER_TOOLS } from "electron-devtools-insta
 import * as path from "path";
 import * as url from "url";
 
+// require("electron-debug")({ enabled: true });
+
 let mainWindow: Electron.BrowserWindow;
 
 async function createWindow() {

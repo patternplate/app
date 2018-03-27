@@ -1,27 +1,52 @@
 import * as React from "react";
 import {observer} from "mobx-react";
-import {ProjectViewModel, ProjectViewState} from "../view-models/project";
-import {Logo} from "../components";
 
 const {styled, keyframes, Text} = require("@patternplate/components");
 
 export interface StartProps {
   value: string;
   valid: boolean;
-  projects: ProjectViewModel[];
   src: string | null;
   onSubmit: React.FormEventHandler<HTMLFormElement>;
   onChange: React.FormEventHandler<HTMLInputElement>;
+  onLinkClick: React.MouseEventHandler<HTMLAnchorElement>;
 }
 
 @observer
 export class Start extends React.Component<StartProps> {
   render() {
     const {props} = this;
-
     return (
       <form onSubmit={props.onSubmit}>
-        <Logo/>
+        <Greeting>
+          <Headline order={0}>Moin!</Headline>
+          <Description>
+            {"Paste an url and get started, e.g: "}
+            <Link
+              title="Add Alva Designkit"
+              onClick={props.onLinkClick}
+              href="https://github.com/meetalva/designkit.git"
+              >
+              github.com/meetalva/designkit.git
+            </Link>
+          </Description>
+        </Greeting>
+        <StyledInputBar>
+          <StyledInput
+            placeholder="Feed me with GIT (or click the link above)"
+            onChange={props.onChange}
+            value={props.value}
+            />
+          {props.valid &&
+            <StyledInputButton>
+              <Text size="m">Add</Text>
+            </StyledInputButton>
+          }
+        </StyledInputBar>
+      </form>
+    )
+    /* return (
+      <form onSubmit={props.onSubmit}>
         <StyledInputBar>
           <StyledInput
             placeholder="Please enter a GIT url"
@@ -103,19 +128,47 @@ export class Start extends React.Component<StartProps> {
             </StyledProjectList>
         }
       </form>
-    );
+    ); */
   }
 }
 
+const Greeting = styled.div`
+  margin-top: 150px;
+  margin-bottom: 45px;
+`;
+
+const Headline = styled.h1`
+  font-size: 60px;
+  font-family: Helvetica;
+  font-weight: normal;
+  color: #fff;
+  margin: 0 0 30px 0;
+`;
+
+const Description = styled.p`
+  font-family: Helvetica;
+  font-size: 32px;
+  color: #fff;
+  margin: 0;
+  line-height: 1.4;
+  max-width: 30ch;
+`;
+
+const Link = styled.a`
+  color: ${(props: any) => props.theme.active};
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  white-space: nowrap;
+`;
+
 const StyledInputBar = styled.div`
   display: flex;
-  margin: 0 auto;
-  width: 50%;
+  width: 65%;
   min-width: 320px;
   max-width: 900px;
   border: 1px solid ${(props: any) => props.theme.color};
-  border-radius: 2px;
-  margin-bottom: 50px;
+  border-radius: 3px;
 `;
 
 const StyledProjectList = styled.ul`
@@ -150,12 +203,14 @@ const StyledInputButton = styled.button.attrs({type: "submit"})`
 `;
 
 const StyledInput = styled.input`
+  box-sizing: border-box;
   flex-grow: 1;
   font-size: 20px;
-  background: ${(props: any) => props.theme.background};
+  height: 60px;
   color: ${(props: any) => props.theme.color};
   border: none;
-  padding: 10px;
+  padding: 20px;
+  background: transparent;
   &:focus {
     outline: none;
   }
