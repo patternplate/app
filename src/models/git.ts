@@ -218,8 +218,11 @@ export class Git<T extends VersionControllable> implements VersionControl {
   }
 
   remove() {
-    this.host.up.next(new VCS.VCSRemoveStartNotification(this.host.id));
+    if (!this.host.path || this.host.path === process.cwd()) {
+      return;
+    }
 
+    this.host.up.next(new VCS.VCSRemoveStartNotification(this.host.id));
     sander.rimraf(this.host.path)
       .then(() => {
         this.host.up.next(new VCS.VCSRemoveEndNotification(this.host.id));

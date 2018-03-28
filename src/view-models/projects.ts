@@ -76,8 +76,10 @@ export class ProjectViewCollection {
       console.log('up', message);
       const match = Msg.match(message);
       match(Msg.VCS.VCSRemoveResponse, () => {
-        const index = this.items.findIndex(p => p.id === message.id);
-        this.items.splice(index, 1);
+        const project = this.items.find(item => item.id === message.id);
+        if (project) {
+          this.removeProject(project);
+        }
       });
     });
 
