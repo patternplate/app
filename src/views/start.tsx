@@ -6,14 +6,13 @@ const {styled, keyframes, Text} = require("@patternplate/components");
 export interface StartProps {
   value: string;
   valid: boolean;
-  src: string | null;
   onSubmit: React.FormEventHandler<HTMLFormElement>;
   onChange: React.FormEventHandler<HTMLInputElement>;
   onLinkClick: React.MouseEventHandler<HTMLAnchorElement>;
 }
 
 @observer
-export class Start extends React.Component<StartProps> {
+export class StartView extends React.Component<StartProps> {
   render() {
     const {props} = this;
     return (
@@ -21,7 +20,8 @@ export class Start extends React.Component<StartProps> {
         <Greeting>
           <Headline order={0}>Moin!</Headline>
           <Description>
-            {"Paste an url and get started, e.g: "}
+            Paste an url to get started<br/>
+            No idea what to paste? Try this one:<br/>
             <Link
               title="Add Alva Designkit"
               onClick={props.onLinkClick}

@@ -1,14 +1,18 @@
 import * as React from "react";
 
-const {styled, Text} = require("@patternplate/components");
+import { ProjectViewModel } from "../view-models/project";
+import { ProjectViewCollection } from "../view-models/projects";
+
+const { Box } = require("styled-system");
+const { css, styled, Text } = require("@patternplate/components");
 
 export interface ProjectsProps {
-  projects: any[];
+  projects: ProjectViewCollection;
 }
 
-export function Projects(props: ProjectsProps) {
+export function ProjectsView(props: ProjectsProps) {
   return (
-    <ProjectsView>
+    <StyledProjectsView>
       <ProjectsHeader>
         <Headline>
           Your libraries
@@ -17,11 +21,34 @@ export function Projects(props: ProjectsProps) {
           Add new library
         </ProjectAdd>
       </ProjectsHeader>
-    </ProjectsView>
+      <ProjectsList>
+        {props.projects.items.map((project: ProjectViewModel) => (
+          <ProjectTile key={project.id}>
+            <ProjectIcon/>
+            <ProjectProperties>
+              <ProjectName readOnly={project.editable !== true}>
+                {project.name}
+              </ProjectName>
+              <ProjectUrl readOnly={project.editable !== true}>
+                {project.url}
+              </ProjectUrl>
+            </ProjectProperties>
+            <ProjectActions>
+              <ProjectAction type="affirmative" onClick={() => project.open()}>
+                <Text>Open</Text>
+              </ProjectAction>
+              <ProjectAction type="negative" onClick={() => project.remove()}>
+                <Text>Remove</Text>
+              </ProjectAction>
+            </ProjectActions>
+          </ProjectTile>
+        ))}
+      </ProjectsList>
+    </StyledProjectsView>
   );
 }
 
-const ProjectsView = styled.div`
+const StyledProjectsView = styled.div`
   margin-top: 150px;
 `;
 
@@ -47,22 +74,8 @@ const ProjectAdd = (props: any) => {
         width="30"
         height="30"
         >
-        <g transform="translate(-435 -261)">
-          <mask id="a">
-            <use fill="#fff" transform="translate(435 261)" xlinkHref="#path0_fill"/>
-            <use fill="#fff" transform="translate(435 261)" xlinkHref="#path1_fill"/>
-            <use fill="#fff" transform="translate(435 261)" xlinkHref="#path2_fill"/>
-          </mask>
-          <g mask="url(#a)">
-            <use fill="#FFF" transform="translate(435 261)" xlinkHref="#path3_stroke_2x"/>
-          </g>
-        </g>
-        <defs>
-          <path id="path0_fill" fillRule="evenodd" d="M15 30a15 15 0 1 0 0-30 15 15 0 0 0 0 30z"/>
-          <path id="path1_fill" fillRule="evenodd" d="M15 7h1v16h-1V7z"/>
-          <path id="path2_fill" fillRule="evenodd" d="M23 15v1H7v-1h16z"/>
-          <path id="path3_stroke_2x" d="M15 7V6h-1v1h1zm1 0h1V6h-1v1zm0 16v1h1v-1h-1zm-1 0h-1v1h1v-1zm8-8h1v-1h-1v1zm0 1v1h1v-1h-1zM7 16H6v1h1v-1zm0-1v-1H6v1h1zm8 16c9 0 16-7 16-16h-2c0 8-6 14-14 14v2zm16-16c0-9-7-16-16-16v2c8 0 14 6 14 14h2zM15-1C6-1-1 6-1 15h2C1 7 7 1 15 1v-2zM-1 15c0 9 7 16 16 16v-2C7 29 1 23 1 15h-2zm16-7h1V6h-1v2zm0-1v16h2V7h-2zm1 15h-1v2h1v-2zm0 1V7h-2v16h2zm6-8v1h2v-1h-2zm1 0H7v2h16v-2zM8 16v-1H6v1h2zm-1 0h16v-2H7v2z"/>
-        </defs>
+        <path d="M15 7h1v16h-1V7z"/>
+        <path d="M23 15v1H7v-1h16z"/>
       </svg>
       <Text size="m">{props.children}</Text>
     </StyledProjectAdd>
@@ -78,10 +91,162 @@ const StyledProjectAdd = styled.button`
   padding: 0;
   color: ${(props: any) => props.theme.color};
   cursor: pointer;
+  &:hover {
+    color: ${(props: any) => props.theme.active};
+  }
   &:focus {
     outline: none;
   }
   > svg {
     margin-right: 10px;
+    fill: currentColor;
+    color: inherit;
+    border: 1px solid currentColor;
+    border-radius: 50%;
+    overflow: hidden;
+  }
+`;
+
+const ProjectsList = styled.ul`
+  list-style-type: none;
+  padding: 0;
+`;
+
+const ProjectIcon = styled.div`
+  flex: 0 0 90px;
+  height: 90px;
+  width: 90px;
+  border-radius: 50%;
+  box-shadow: 0 0 6px rgba(0, 0, 0, 0.12);
+  margin-right: 30px;
+`;
+
+const ProjectProperties = styled.div`
+  flex: 1 1 100%;
+  overflow: hidden;
+`;
+
+const ProjectActions = styled.div`
+  opacity: 0;
+  pointer-events: none;
+  display: flex;
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  padding: 20px 0 20px 45px;
+  margin-right: 10px;
+  background-image: linear-gradient(
+    to right,
+    rgba(255, 255, 255, 0),
+    rgba(255, 255, 255, 1) 20%
+  );
+`;
+
+const ProjectAction = styled.button`
+  background: none;
+  border: none;
+  border-radius: none;
+  text-align: left;
+  cursor: pointer;
+  color: ${(props: any) => props.type === "negative" ? props.theme.error : props.theme.active};
+  &:hover {
+    text-decoration: underline;
+    text-decoration-style: dotted;
+  }
+  &:not(:last-child) {
+    margin-right: 10px;
+  }
+  &:focus {
+    outline: none;
+  }
+`;
+
+const ProjectTile = styled.li`
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #fff;
+  border: 1px solid #979797;
+  border-radius: 6px;
+  padding: 15px;
+  box-shadow: 0 0 6px rgba(0, 0, 0, 0.12);
+  overflow: hidden;
+  &:hover ${ProjectActions} {
+    opacity: 1;
+    pointer-events: initial;
+  }
+`;
+
+interface ProjectPropertyProps {
+  children: string;
+  className?: string;
+  placeholder: string;
+  readOnly: boolean;
+  full?: boolean;
+}
+
+const ProjectProperty: React.SFC<ProjectPropertyProps> = props => {
+  return (
+    <StyledPropertyInput
+      className={props.className}
+      value={props.children}
+      placeholder={props.placeholder}
+      full={props.full}
+      readOnly={props.readOnly}
+      />
+  );
+};
+
+interface ProjectNameProps {
+  children: string;
+  readOnly: boolean;
+}
+
+const ProjectName: React.SFC<ProjectNameProps> = props => {
+  return (
+    <StyledPropertyProjectName placeholder="Name" readOnly={props.readOnly} full={false}>
+      {props.children}
+    </StyledPropertyProjectName>
+  )
+};
+
+const StyledPropertyProjectName = styled(ProjectProperty)`
+  ${(props: any) => props.readOnly ? css`
+    color: #0F0F32;
+    font-size: 20px;
+  `: ''}
+`;
+
+const ProjectUrl: React.SFC<ProjectNameProps> = props => {
+  return (
+    <StyledPropertyProjectUrl placeholder="GIT URL" readOnly={props.readOnly} full>
+      {props.children}
+    </StyledPropertyProjectUrl>
+  )
+};
+
+const StyledPropertyProjectUrl = styled(ProjectProperty)`
+  ${(props: any) => props.readOnly ? css`
+    color: #999;
+    font-size: 13px;
+  `: ''}
+`;
+
+
+const StyledPropertyInput = styled.input`
+  display: block;
+  padding: ${(props: any) => props.readOnly ? 0 : 7}px 15px;
+  margin-left: -15px;
+  border: ${(props: any) => props.readOnly ? "none" : "3px dashed #ccc"};
+  border-radius: 6px;
+  box-sizing: border-box;
+  width: ${(props: any) => props.full ? "100%": "auto"};
+  &:not(:last-child) {
+    margin-bottom: 7px;
+  }
+  &:focus {
+    outline: none;
   }
 `;

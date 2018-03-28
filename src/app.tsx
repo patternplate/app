@@ -1,19 +1,21 @@
 
 import * as React from "react";
 
-import { Start } from "./views/start";
-import { Projects } from "./views/projects";
+import { StartView } from "./views/start";
+import { ProjectsView } from "./views/projects";
 
 import { StartViewModel } from "./view-models/start";
+import { ProjectViewCollection } from "./view-models/projects";
 
 const { Observer, observer, inject } = require("mobx-react");
 const { ThemeProvider, themes, styled } = require("@patternplate/components");
 
 interface InjectedAppProps {
   start: StartViewModel;
+  projects: ProjectViewCollection;
 }
 
-@inject("start")
+@inject("start", "projects")
 @observer
 export class App extends React.Component {
   render() {
@@ -23,11 +25,10 @@ export class App extends React.Component {
       <ThemeProvider theme={themes().dark}>
         <Tower>
           {
-            props.start.projects.length === 0 &&
-              <Start
+            props.projects.length === 0 &&
+              <StartView
                 value={props.start.input}
                 valid={props.start.valid}
-                src={props.start.src}
                 onLinkClick={(e: React.MouseEvent<HTMLAnchorElement>) => {
                   e.preventDefault();
                   const target = e.target as HTMLAnchorElement;
@@ -39,14 +40,15 @@ export class App extends React.Component {
                 }}
                 onSubmit={(e: React.FormEvent<HTMLFormElement>) => {
                   e.preventDefault();
-                  props.start.addProject(props.start.input);
+                  props.projects.addProjectByUrl(props.start.input);
+                  props.start.resetInput();
                 }}
                 />
           }
           {
-            props.start.projects.length > 0 &&
-              <Projects
-                projects={props.start.projects}
+            props.projects.length > 0 &&
+              <ProjectsView
+                projects={props.projects}
                 />
           }
         </Tower>

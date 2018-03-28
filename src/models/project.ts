@@ -15,6 +15,7 @@ const gitUrlParse = require("git-url-parse");
 
 export interface ProjectInit {
   id?: string;
+  name: string;
   path: string;
   url: string;
   previous: { [key: string]: any };
@@ -26,6 +27,7 @@ export class Project implements Channel {
   public readonly id: string;
   public readonly url: string;
   public readonly path: string;
+  public readonly name: string;
   public readonly vcs: VersionControl;
   public readonly modules: Modules<Project>;
   public readonly previous: any;
@@ -33,8 +35,19 @@ export class Project implements Channel {
   public readonly up: Subject<any> = new Subject();
   public readonly down: Subject<any> = new Subject();
 
-  static from(init: ProjectInit) {
+  static from(init: ProjectInit): Project {
     return new Project(init);
+  }
+
+  static fromUrl(url: string): Project {
+    const parsed = gitUrlParse(url);
+
+    return new Project({
+      url,
+      path: Path.join(Os.homedir(), "patternplate"),
+      name: parsed.full_name,
+      previous: null
+    });
   }
 
   constructor(init: ProjectInit) {
@@ -45,6 +58,7 @@ export class Project implements Channel {
     this.vcs = new Git(this);
     this.modules = new Modules(this);
     this.previous = init.previous;
+    this.name = init.name;
 
     this.down.subscribe((message: any) => {
       const match = Msg.match(message);

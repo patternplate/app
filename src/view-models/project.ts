@@ -1,7 +1,7 @@
-// import {VCSProgressNotification, VCSCloneStartNotification, VCSCloneEndNotification, VCSErrorNotification, VCSRemoveRequest, VCSRemoveResponse} from "../messages/vcs";
+import {action, observable, computed} from "mobx";
+import * as uuid from "uuid";
 import * as Msg from "../messages"
 import {Project} from "../models/project";
-import {action, observable} from "mobx";
 
 export enum ProjectViewState {
   Unknown = "UNKNOW",
@@ -44,13 +44,34 @@ const TRANSITION_STATES = [
 const BUILT = STATE_ORDER.indexOf(ProjectViewState.Built);
 
 export class ProjectViewModel {
-  public readonly model: Project;
+  private readonly model: Project;
 
   @observable error: Error;
   @observable state: ProjectViewState = ProjectViewState.Unknown;
   @observable progress: number;
   @observable highlighted: boolean;
   @observable port: number = 0;
+  @observable editable: boolean = false;
+
+  @computed get id() {
+    return this.model.id;
+  }
+
+  @computed get name() {
+    return this.model.name;
+  }
+
+  @computed get url() {
+    return this.model.url;
+  }
+
+  @computed get up() {
+    return this.model.up;
+  }
+
+  @computed get down() {
+    return this.model.down;
+  }
 
   constructor(project: Project) {
     this.model = project;
@@ -202,5 +223,18 @@ export class ProjectViewModel {
 
   @action highlight() {
     this.highlighted = true;
+  }
+
+  @action open() {
+    throw new Error("Not implemented yet");
+  }
+
+  @action edit() {
+    throw new Error("Not implemented yet");
+  }
+
+  @action remove() {
+    const tid = uuid.v4();
+    this.down.next(new Msg.VCS.VCSRemoveRequest(tid));
   }
 }

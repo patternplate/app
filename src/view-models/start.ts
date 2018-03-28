@@ -27,9 +27,6 @@ export class StartViewModel {
   /* Known patternplate projects */
   @observable projects: ProjectViewModel[] = [];
 
-  /* Currently active webview src */
-  @observable src: null | string;
-
   @computed get valid(): boolean {
     if (this.input.length === 0) {
       return false;
@@ -45,20 +42,9 @@ export class StartViewModel {
     }
   }
 
-  static from(store: any) {
+  static fromStore(store: any) {
     return new StartViewModel({
       input: store.get("input"),
-      projects: store.get("projects")
-        .map((serialized: any) => {
-          const data = ARSON.parse(serialized);
-          const project = Project.from({
-            url: data.model.url,
-            path: Path.join(Os.homedir(), "patternplate"),
-            previous: data
-          });
-          project.down.next(new Msg.Project.ProjectAnalyseRequest(project.id));
-          return new ProjectViewModel(project);
-        }),
       store
     });
   }
@@ -70,7 +56,7 @@ export class StartViewModel {
       this.input = init.input;
     }
 
-    if (init.hasOwnProperty("projects") && Array.isArray(init.projects)) {
+/*    if (init.hasOwnProperty("projects") && Array.isArray(init.projects)) {
       this.projects = init.projects;
 
       this.projects.forEach(project => {
@@ -80,10 +66,10 @@ export class StartViewModel {
         this.up.subscribe(msg => this.onUpMessage(msg));
         this.down.subscribe(msg => this.onDownMessage(msg));
       });
-    }
+    } */
   }
 
-  onUpMessage(message: any) {
+  /* onUpMessage(message: any) {
     console.log('up', message);
     const match = Msg.match(message);
 
@@ -135,7 +121,7 @@ export class StartViewModel {
 
     this.projects.push(new ProjectViewModel(project));
     project.down.next(new Msg.Project.ProjectProcessRequest(project.id, project));
-  }
+  } */
 
   @action setInput(input: string) {
     if (this.valid) {
@@ -144,7 +130,8 @@ export class StartViewModel {
     this.input = input;
   }
 
-  @action setSrc(src: string) {
-    this.src = src;
+  @action resetInput() {
+    this.store.set("input", "");
+    this.input = "";
   }
 }
