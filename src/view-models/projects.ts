@@ -52,6 +52,13 @@ export class ProjectViewCollection {
 
   @action
   addProjectByUrl(url: string): void {
+    const previous = this.items.find(p => p.url === url);
+
+    if (previous) {
+      previous.setHighlighted();
+      return;
+    }
+
     const model = Project.fromUrl(url);
 
     const viewModel = new ProjectViewModel(model);
@@ -82,12 +89,26 @@ export class ProjectViewCollection {
     this.up.subscribe((message: any) => {
       console.log('up', message);
       const match = Msg.match(message);
+
       match(Msg.VCS.VCSRemoveResponse, () => {
         const project = this.items.find(item => item.id === message.id);
         if (project) {
           this.removeProject(project);
         }
       });
+
+      match(Msg.Project.ProjectSaveRequest, () => {
+        const project = this.items.find(item => item.url === message.project.url);
+
+        if (project) {
+          project.setHighlighted();
+        }
+
+        message.project.up.next(new Msg.Project.ProjectSaveResponse(message.tid, {
+          success: !project
+        }));
+      });
+
       match(Msg.Project.ProjectDiscardNotification, () => {
         const project = this.items.find(item => item.id === message.id);
         if (project) {

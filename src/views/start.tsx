@@ -1,7 +1,7 @@
 import * as React from "react";
-import {observer} from "mobx-react";
+import { observer } from "mobx-react";
 
-const {styled, keyframes, Text} = require("@patternplate/components");
+const { styled, keyframes, Text } = require("@patternplate/components");
 
 export interface StartProps {
   value: string;

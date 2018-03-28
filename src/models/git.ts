@@ -219,6 +219,7 @@ export class Git<T extends VersionControllable> implements VersionControl {
 
   remove() {
     if (!this.host.path || this.host.path === process.cwd()) {
+      this.host.up.next(new VCS.VCSRemoveResponse(this.host.id, (this.host as any).id));
       return;
     }
 

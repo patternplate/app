@@ -9,3 +9,5 @@ export {ProjectCloseNotification} from "./project-close-notification";
 export {ProjectAnalyseRequest} from "./project-analyse-request";
 export {ProjectAnalyseResponse} from "./project-analyse-response";
 export {ProjectDiscardNotification} from "./project-discard-notification";
+export {ProjectSaveRequest} from "./project-save-request";
+export {ProjectSaveResponse} from "./project-save-response";

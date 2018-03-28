@@ -1,52 +1,103 @@
 import * as React from "react";
+import { observer } from "mobx-react";
 
 import { ProjectViewModel } from "../view-models/project";
 import { ProjectViewCollection } from "../view-models/projects";
 
 const { Box } = require("styled-system");
-const { css, styled, Text } = require("@patternplate/components");
+const { css, styled, keyframes, Text } = require("@patternplate/components");
+const { Animated } = require("react-web-animation");
+
+const WIGGLE = [
+  {
+    transform: "rotate(0deg)"
+  },
+  {
+    transform: "rotate(2deg)",
+    offet: 0.25
+  },
+  {
+    transform: "rotate(-2deg)",
+    offset: 0.75
+  },
+  {
+    transform: "rotate(0deg)"
+  },
+];
 
 export interface ProjectsProps {
   projects: ProjectViewCollection;
   onAddClick: React.MouseEventHandler<HTMLElement>;
 }
 
-export function ProjectsView(props: ProjectsProps) {
-  return (
-    <StyledProjectsView>
-      <ProjectsHeader>
-        <Headline>
-          Your libraries
-        </Headline>
-        <ProjectAdd onClick={props.onAddClick}>
-          Add new library
-        </ProjectAdd>
-      </ProjectsHeader>
-      <ProjectsList>
-        {props.projects.items.map((project: ProjectViewModel) => (
-          <ProjectTile key={project.id}>
-            <ProjectIcon/>
-            <ProjectProperties>
-              <ProjectName readOnly={project.editable !== true}>
-                {project.name}
-              </ProjectName>
-              <ProjectUrl readOnly={project.editable !== true}>
-                {project.url}
-              </ProjectUrl>
-            </ProjectProperties>
-            <ProjectActions>
-              <ProjectAction type="negative" onClick={project.editable ? () => project.discard() : () => project.remove()}>
-                <Text>{project.editable ? "Discard" : "Remove"}</Text>
-              </ProjectAction>
-              <ProjectAction type="affirmative" onClick={project.editable ? () => project.save() : () => project.open()}>
-                <Text>{project.editable ? "Save" : "Open"}</Text>
-              </ProjectAction>
-            </ProjectActions>
-          </ProjectTile>
-        ))}
-      </ProjectsList>
-    </StyledProjectsView>
-  );
+@observer
+export class ProjectsView extends React.Component<ProjectsProps> {
+  render() {
+    const { props } = this;
+
+    return (
+      <StyledProjectsView>
+        <ProjectsHeader>
+          <Headline>
+            Your libraries
+          </Headline>
+          <ProjectAdd onClick={props.onAddClick}>
+            Add new library
+          </ProjectAdd>
+        </ProjectsHeader>
+        <ProjectsList>
+          {props.projects.items
+            .map((project: ProjectViewModel) => (
+              <form
+                key={project.id}
+                onSubmit={(e: any) => {
+                  e.preventDefault();
+                  project.editable ? project.save() : project.open();
+                }}
+                onReset={(e: any) => {
+                  e.preventDefault();
+                  project.editable ? project.discard() : project.remove();
+                }}
+                >
+                <ProjectTile
+                  playState={project.highlighted ? "running" : "idle"}
+                  timing={{duration: 300, iterations: 2}}
+                  keyframes={WIGGLE}
+                  >
+                    <ProjectIcon/>
+                    <ProjectProperties>
+                      <ProjectName
+                        onChange={(e: any) => project.setInputName(e.target.value)}
+                        readOnly={project.editable !== true}
+                        value={project.inputName || project.name || ""}
+                        />
+                      <ProjectUrl
+                        onChange={(e: any) => project.setInputUrl(e.target.value)}
+                        readOnly={project.editable !== true}
+                        value={project.inputUrl || project.url || ""}
+                        />
+                    </ProjectProperties>
+                    <ProjectActions>
+                      <ProjectAction
+                        actionType="negative"
+                        type="reset"
+                        >
+                        <Text>{project.editable ? "Discard" : "Remove"}</Text>
+                      </ProjectAction>
+                      <ProjectAction
+                        actionType="affirmative"
+                        type="submit"
+                        >
+                        <Text>{project.editable ? "Save" : "Open"}</Text>
+                      </ProjectAction>
+                    </ProjectActions>
+                </ProjectTile>
+              </form>
+          ))}
+        </ProjectsList>
+      </StyledProjectsView>
+    );
+  }
 }
 
 const StyledProjectsView = styled.div`
@@ -119,7 +170,7 @@ const ProjectIcon = styled.div`
   width: 90px;
   border-radius: 50%;
   box-shadow: 0 0 6px rgba(0, 0, 0, 0.12);
-  margin-right: 30px;
+  margin-right: 15px;
 `;
 
 const ProjectProperties = styled.div`
@@ -150,7 +201,7 @@ const ProjectAction = styled.button`
   border-radius: none;
   text-align: left;
   cursor: pointer;
-  color: ${(props: any) => props.type === "negative" ? props.theme.error : props.theme.active};
+  color: ${(props: any) => props.actionType === "negative" ? props.theme.error : props.theme.active};
   &:hover {
     text-decoration: underline;
     text-decoration-style: dotted;
@@ -163,7 +214,7 @@ const ProjectAction = styled.button`
   }
 `;
 
-const ProjectTile = styled.li`
+const ProjectTile = styled(Animated.div)`
   position: relative;
   display: flex;
   justify-content: space-between;
@@ -174,6 +225,7 @@ const ProjectTile = styled.li`
   padding: 15px;
   box-shadow: 0 0 6px rgba(0, 0, 0, 0.12);
   overflow: hidden;
+  margin-bottom: 15px;
   &:hover ${ProjectActions} {
     opacity: 1;
     pointer-events: initial;
@@ -181,61 +233,80 @@ const ProjectTile = styled.li`
 `;
 
 interface ProjectPropertyProps {
-  children: string;
+  autoFocus: boolean;
+  value: string;
+  name: string;
   className?: string;
   placeholder: string;
   readOnly: boolean;
   full?: boolean;
+  signify: boolean;
+  onChange?: React.ChangeEventHandler<HTMLInputElement>;
 }
 
 const ProjectProperty: React.SFC<ProjectPropertyProps> = props => {
   return (
     <StyledPropertyInput
+      autoFocus={props.autoFocus}
       className={props.className}
-      value={props.children}
+      value={props.value}
+      name={props.name}
       placeholder={props.placeholder}
       full={props.full}
       readOnly={props.readOnly}
+      signify={props.signify}
+      onChange={props.onChange}
       />
   );
 };
 
 interface ProjectNameProps {
-  children: string;
+  value: string;
   readOnly: boolean;
+  onChange?: React.ChangeEventHandler<HTMLInputElement>;
 }
 
 const ProjectName: React.SFC<ProjectNameProps> = props => {
   return (
-    <StyledPropertyProjectName placeholder="Name" readOnly={props.readOnly} full={false}>
-      {props.children}
-    </StyledPropertyProjectName>
+    <StyledPropertyProjectName
+      placeholder="Name"
+      readOnly={props.readOnly}
+      full={false}
+      signify={false}
+      value={props.value}
+      onChange={props.onChange}
+      />
   )
 };
 
-const StyledPropertyProjectName = styled(ProjectProperty)`
+const StyledPropertyProjectName = styled(ProjectProperty).attrs({name: "name"})`
   color: #0F0F32;
   font-size: 20px;
 `;
 
 const ProjectUrl: React.SFC<ProjectNameProps> = props => {
   return (
-    <StyledPropertyProjectUrl placeholder="GIT URL" readOnly={props.readOnly} full>
-      {props.children}
-    </StyledPropertyProjectUrl>
+    <StyledPropertyProjectUrl
+      full
+      autoFocus
+      placeholder="GIT URL"
+      readOnly={props.readOnly}
+      signify={true}
+      onChange={props.onChange}
+      value={props.value}
+      />
   )
 };
 
-const StyledPropertyProjectUrl = styled(ProjectProperty)`
+const StyledPropertyProjectUrl = styled(ProjectProperty).attrs({name: "url"})`
   color: #999;
   font-size: 13px;
 `;
 
-
 const StyledPropertyInput = styled.input`
   display: block;
   padding: ${(props: any) => props.readOnly ? 0 : 8}px 15px;
-  border: ${(props: any) => props.readOnly ? "none" : "1.5px dashed #999"};
+  border: ${(props: any) => props.readOnly || !props.signify ? "1.5px dashed transparent" : "1.5px dashed #999"};
   border-radius: 6px;
   box-sizing: border-box;
   width: ${(props: any) => props.full ? "100%": "auto"};
@@ -244,5 +315,6 @@ const StyledPropertyInput = styled.input`
   }
   &:focus {
     outline: none;
+    border: ${(props: any) => props.readOnly ? "1.5px dashed transparent" : "1.5px dashed #999"};
   }
 `;

@@ -3,6 +3,8 @@ import * as uuid from "uuid";
 import * as Msg from "../messages"
 import {Project} from "../models/project";
 
+const parseGitUrl = require("git-url-parse");
+
 export enum ProjectViewState {
   Unknown = "UNKNOW",
   Fetching = "FETCHING",
@@ -48,8 +50,11 @@ const TRANSITION_STATES = [
 const BUILT = STATE_ORDER.indexOf(ProjectViewState.Built);
 
 export class ProjectViewModel {
-  private readonly model: Project;
+  private model: Project;
+  private highlightTimer: NodeJS.Timer;
 
+  @observable inputName: string;
+  @observable inputUrl: string;
   @observable error: Error;
   @observable state: ProjectViewState = ProjectViewState.Unknown;
   @observable progress: number;
@@ -233,8 +238,31 @@ export class ProjectViewModel {
     this.port = port;
   }
 
-  @action highlight() {
+  @action setHighlighted() {
     this.highlighted = true;
+
+    if (typeof this.highlightTimer === "number") {
+      clearTimeout(this.highlightTimer);
+    }
+
+    this.highlightTimer = setTimeout(() => {
+      this.highlighted = false;
+    }, 600);
+  }
+
+  @action setInputName(inputName: string) {
+    this.inputName = inputName;
+  }
+
+  @action setInputUrl(inputUrl: string) {
+    this.inputUrl = inputUrl;
+
+    try {
+      const parsed = parseGitUrl(inputUrl);
+      this.inputName = parsed.full_name;
+    } catch (err) {
+      this.inputName = "";
+    }
   }
 
   @action open() {
@@ -251,7 +279,42 @@ export class ProjectViewModel {
   }
 
   @action save() {
-    console.log("save");
+    if (!this.inputUrl) {
+      return;
+    }
+
+    const model = Project.fromInput({
+      name: this.inputName,
+      url: this.inputUrl
+    });
+
+    const tid = uuid.v4();
+
+    const onModelMessage = (message: any) => {
+      const match = Msg.match(message);
+
+      match(Msg.Project.ProjectSaveResponse, () => {
+        if (message.tid !== tid) {
+          return;
+        }
+
+        if (!message.payload.success) {
+          return;
+        }
+
+
+        this.model.url = model.url;
+        this.model.name = model.name;
+        this.setEditable(false);
+      });
+    };
+
+    model.up.subscribe(onModelMessage);
+    this.up.next(new Msg.Project.ProjectSaveRequest(tid, model));
+  }
+
+  @action setEditable(editable: boolean) {
+    this.editable = editable;
   }
 
   @action discard() {

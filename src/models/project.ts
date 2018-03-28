@@ -21,13 +21,19 @@ export interface ProjectInit {
   previous: { [key: string]: any };
 }
 
+export interface ProjectInput {
+  name: string;
+  url: string;
+}
+
+
 export class Project implements Channel {
   private messages: (Msg.VCS.VCSMessage | Msg.Project.ProjectMessage)[] = [];
 
+  public url: string;
+  public name: string;
   public readonly id: string;
-  public readonly url: string;
   public readonly path: string;
-  public readonly name: string;
   public readonly vcs: VersionControl;
   public readonly modules: Modules<Project>;
   public readonly previous: any;
@@ -46,6 +52,15 @@ export class Project implements Channel {
 
   static from(init: ProjectInit): Project {
     return new Project(init);
+  }
+
+  static fromInput(input: ProjectInput): Project {
+    return new Project({
+      name: input.name,
+      url: input.url,
+      path: Path.join(Os.homedir(), "patternplate"),
+      previous: null
+    });
   }
 
   static fromUrl(url: string): Project {
