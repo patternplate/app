@@ -37,7 +37,7 @@
   },
   "devDependencies": {
     "concurrently": "^3.5.1",
-    "electron": "^1.7.11",
+    "electron": "^1.8.4",
     "electron-builder": "^20.6.2",
     "electron-devtools-installer": "^2.2.3",
     "electron-reloader": "^0.2.0",
