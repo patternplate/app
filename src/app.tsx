@@ -40,7 +40,8 @@ export class App extends React.Component {
                 }}
                 onSubmit={(e: React.FormEvent<HTMLFormElement>) => {
                   e.preventDefault();
-                  props.projects.addProjectByUrl(props.start.input);
+                  const project = props.projects.addProjectByUrl(props.start.input);
+                  project.clone();
                   props.start.resetInput();
                 }}
                 />

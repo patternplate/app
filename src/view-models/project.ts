@@ -265,6 +265,11 @@ export class ProjectViewModel {
     }
   }
 
+  clone() {
+    const tid = uuid.v4();
+    this.down.next(new Msg.VCS.VCSCloneRequest(tid, this.model));
+  }
+
   @action open() {
     throw new Error("Not implemented yet");
   }
@@ -302,10 +307,19 @@ export class ProjectViewModel {
           return;
         }
 
+        const url = this.inputUrl || this.url;
+        const name = this.inputName || this.name;
+        const changed = url !== this.model.url;
 
-        this.model.url = model.url;
-        this.model.name = model.name;
+        this.model.setUrl(url);
+        this.model.setName(name);
         this.setEditable(false);
+
+        if (changed) {
+          this.model.process();
+        }
+
+        this.up.next(new Msg.Project.ProjectSaveNotification(tid, this.model));
       });
     };
 

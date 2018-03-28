@@ -39,6 +39,10 @@ export class Git<T extends VersionControllable> implements VersionControl {
   }
 
   async analyse() {
+    if (!this.host.path || this.host.path === process.cwd()) {
+      return;
+    }
+
     const exists = await sander.exists(this.host.path);
 
     if (!exists) {
@@ -118,6 +122,10 @@ export class Git<T extends VersionControllable> implements VersionControl {
     const host = this.host;
     const tid = uuid.v4();
     let retries = 0;
+
+    if (!this.host.path || this.host.path === process.cwd()) {
+      return;
+    }
 
     host.up.next(new VCS.VCSCloneStartNotification(tid, {
       url: this.host.url,

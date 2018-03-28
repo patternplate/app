@@ -51,7 +51,7 @@ export class ProjectViewCollection {
   }
 
   @action
-  addProjectByUrl(url: string): void {
+  addProjectByUrl(url: string): ProjectViewModel {
     const previous = this.items.find(p => p.url === url);
 
     if (previous) {
@@ -66,6 +66,7 @@ export class ProjectViewCollection {
     this.bind(viewModel);
 
     this.store.set("projects", this.toStore());
+    return viewModel;
   }
 
   @action
@@ -114,6 +115,10 @@ export class ProjectViewCollection {
         message.project.up.next(new Msg.Project.ProjectSaveResponse(message.tid, {
           success: !project
         }));
+      });
+
+      match(Msg.Project.ProjectSaveNotification, () => {
+        this.store.set("projects", this.toStore());
       });
 
       match(Msg.Project.ProjectDiscardNotification, () => {

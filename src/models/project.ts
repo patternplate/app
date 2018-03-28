@@ -170,4 +170,15 @@ export class Project implements Channel {
   remove() {
     this.down.next(new Msg.VCS.VCSRemoveRequest(this.id));
   }
+
+  setUrl(url: string) {
+    const parsed = gitUrlParse(url);
+    this.path = Path.resolve(this.path, parsed.full_name.split("/").join(Path.sep));
+    this.url = url;
+    console.log(this);
+  }
+
+  setName(name: string) {
+    this.name = name;
+  }
 }
