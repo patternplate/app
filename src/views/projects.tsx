@@ -8,6 +8,7 @@ const { css, styled, Text } = require("@patternplate/components");
 
 export interface ProjectsProps {
   projects: ProjectViewCollection;
+  onAddClick: React.MouseEventHandler<HTMLElement>;
 }
 
 export function ProjectsView(props: ProjectsProps) {
@@ -17,7 +18,7 @@ export function ProjectsView(props: ProjectsProps) {
         <Headline>
           Your libraries
         </Headline>
-        <ProjectAdd>
+        <ProjectAdd onClick={props.onAddClick}>
           Add new library
         </ProjectAdd>
       </ProjectsHeader>
@@ -34,11 +35,11 @@ export function ProjectsView(props: ProjectsProps) {
               </ProjectUrl>
             </ProjectProperties>
             <ProjectActions>
-              <ProjectAction type="affirmative" onClick={() => project.open()}>
-                <Text>Open</Text>
+              <ProjectAction type="negative" onClick={project.editable ? () => project.discard() : () => project.remove()}>
+                <Text>{project.editable ? "Discard" : "Remove"}</Text>
               </ProjectAction>
-              <ProjectAction type="negative" onClick={() => project.remove()}>
-                <Text>Remove</Text>
+              <ProjectAction type="affirmative" onClick={project.editable ? () => project.save() : () => project.open()}>
+                <Text>{project.editable ? "Save" : "Open"}</Text>
               </ProjectAction>
             </ProjectActions>
           </ProjectTile>
@@ -67,7 +68,7 @@ const Headline = styled(Text)`
 
 const ProjectAdd = (props: any) => {
   return (
-    <StyledProjectAdd>
+    <StyledProjectAdd onClick={props.onClick}>
       <svg
         xmlns="http://www.w3.org/2000/svg"
         xmlnsXlink="http://www.w3.org/1999/xlink"
@@ -213,10 +214,8 @@ const ProjectName: React.SFC<ProjectNameProps> = props => {
 };
 
 const StyledPropertyProjectName = styled(ProjectProperty)`
-  ${(props: any) => props.readOnly ? css`
-    color: #0F0F32;
-    font-size: 20px;
-  `: ''}
+  color: #0F0F32;
+  font-size: 20px;
 `;
 
 const ProjectUrl: React.SFC<ProjectNameProps> = props => {
@@ -228,18 +227,15 @@ const ProjectUrl: React.SFC<ProjectNameProps> = props => {
 };
 
 const StyledPropertyProjectUrl = styled(ProjectProperty)`
-  ${(props: any) => props.readOnly ? css`
-    color: #999;
-    font-size: 13px;
-  `: ''}
+  color: #999;
+  font-size: 13px;
 `;
 
 
 const StyledPropertyInput = styled.input`
   display: block;
-  padding: ${(props: any) => props.readOnly ? 0 : 7}px 15px;
-  margin-left: -15px;
-  border: ${(props: any) => props.readOnly ? "none" : "3px dashed #ccc"};
+  padding: ${(props: any) => props.readOnly ? 0 : 8}px 15px;
+  border: ${(props: any) => props.readOnly ? "none" : "1.5px dashed #999"};
   border-radius: 6px;
   box-sizing: border-box;
   width: ${(props: any) => props.full ? "100%": "auto"};

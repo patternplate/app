@@ -35,6 +35,15 @@ export class Project implements Channel {
   public readonly up: Subject<any> = new Subject();
   public readonly down: Subject<any> = new Subject();
 
+  static createEmpty(): Project {
+    return new Project({
+      url: "",
+      path: "",
+      name: "",
+      previous: null
+    });
+  }
+
   static from(init: ProjectInit): Project {
     return new Project(init);
   }

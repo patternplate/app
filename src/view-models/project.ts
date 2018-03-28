@@ -20,6 +20,10 @@ export enum ProjectViewState {
   Removed = "REMOVED",
 }
 
+export interface ProjectOptions {
+  editable: boolean;
+}
+
 const STATE_ORDER = [
   ProjectViewState.Unknown,
   ProjectViewState.Fetching,
@@ -73,8 +77,17 @@ export class ProjectViewModel {
     return this.model.down;
   }
 
-  constructor(project: Project) {
+  static createEmpty(): ProjectViewModel {
+    const model = Project.createEmpty();
+    return new ProjectViewModel(model, {editable: true});
+  }
+
+  constructor(project: Project, options?: ProjectOptions) {
     this.model = project;
+
+    if (options && options.hasOwnProperty("editable")) {
+      this.editable = options.editable;
+    }
 
     this.model.up.subscribe((message: any) => {
       const match = Msg.match(message);
@@ -88,7 +101,6 @@ export class ProjectViewModel {
 
           const PREV_STATE = STATE_ORDER.indexOf(this.model.previous.state);
 
-          console.log(message);
           // If no diff happened and the persisted model had been build
           // assume the current state has a build, too
           if (message.diff.length === 0 && PREV_STATE >= BUILT) {
@@ -236,5 +248,14 @@ export class ProjectViewModel {
   @action remove() {
     const tid = uuid.v4();
     this.down.next(new Msg.VCS.VCSRemoveRequest(tid));
+  }
+
+  @action save() {
+    console.log("save");
+  }
+
+  @action discard() {
+    const tid = uuid.v4();
+    this.up.next(new Msg.Project.ProjectDiscardNotification(tid, this.id));
   }
 }

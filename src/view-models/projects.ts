@@ -62,6 +62,13 @@ export class ProjectViewCollection {
   }
 
   @action
+  addEmptyProject(): void {
+    const empty = ProjectViewModel.createEmpty();
+    this.items.unshift(empty);
+    this.bind(empty);
+  }
+
+  @action
   removeProject(removal: ProjectViewModel): void {
     this.items.splice(this.items.indexOf(removal), 1);
 
@@ -81,6 +88,12 @@ export class ProjectViewCollection {
           this.removeProject(project);
         }
       });
+      match(Msg.Project.ProjectDiscardNotification, () => {
+        const project = this.items.find(item => item.id === message.id);
+        if (project) {
+          this.removeProject(project);
+        }
+      });
     });
 
     this.down.subscribe((message: any) => {
@@ -89,6 +102,8 @@ export class ProjectViewCollection {
   }
 
   toStore() {
-    return this.items.map(p => ARSON.stringify(p));
+    return this.items
+      .filter(p => !p.editable)
+      .map(p => ARSON.stringify(p));
   }
 }

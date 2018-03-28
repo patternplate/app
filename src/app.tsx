@@ -49,6 +49,9 @@ export class App extends React.Component {
             props.projects.length > 0 &&
               <ProjectsView
                 projects={props.projects}
+                onAddClick={() => {
+                  props.projects.addEmptyProject();
+                }}
                 />
           }
         </Tower>
