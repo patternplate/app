@@ -70,6 +70,13 @@ export class ProjectViewCollection {
 
   @action
   addEmptyProject(): void {
+    const editable = this.items.find(i => i.editable);
+
+    if (editable) {
+      editable.setHighlighted();
+      return;
+    }
+
     const empty = ProjectViewModel.createEmpty();
     this.items.unshift(empty);
     this.bind(empty);
