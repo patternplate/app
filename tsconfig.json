@@ -1,4 +1,5 @@
 {
+  "extends": "./node_modules/electron-webpack/tsconfig-base.json",
   "compilerOptions": {
     "experimentalDecorators": true,
     "jsx": "react",
@@ -8,6 +9,7 @@
     "sourceMap": true,
     "outDir": "dist",
     "baseUrl": ".",
+    "skipLibCheck": true,
     "paths": {
       "*": ["node_modules/*"]
     }
@@ -15,5 +17,8 @@
   "include": [
     "typings/**/*",
     "src/**/*"
+  ],
+  "exclude": [
+    "node_modules"
   ]
 }
