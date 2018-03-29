@@ -3,6 +3,39 @@ import { observer } from "mobx-react";
 
 const { styled, Text } = require("@patternplate/components");
 
+interface Greeting {
+  location: string;
+  utterance: string;
+}
+
+const GREETINGS: Greeting[] = [
+  {
+    location: "Hamburg",
+    utterance: "Moin!"
+  },
+  {
+    location: "Frankfurt",
+    utterance: "Gude!"
+  },
+  {
+    location: "Munich",
+    utterance: "Servus!"
+  },
+  {
+    location: "Berlin",
+    utterance: "Tach!"
+  },
+  {
+    location: "Prague",
+    utterance: "Ahoj!"
+  }
+];
+
+const greeting = (): Greeting => {
+  const index = Math.min(Math.round(Math.random() * GREETINGS.length), GREETINGS.length - 1);
+  return GREETINGS[index];
+}
+
 export interface StartProps {
   value: string;
   valid: boolean;
@@ -13,12 +46,29 @@ export interface StartProps {
 
 @observer
 export class StartView extends React.Component<StartProps> {
+  state = {
+    greeting: {
+      location: "",
+      utterance: ""
+    }
+  };
+
+  componentWillMount() {
+    this.setState({
+      greeting: greeting()
+    });
+  }
+
   render() {
     const {props} = this;
+    const {greeting} = this.state;
+
     return (
       <form onSubmit={props.onSubmit}>
         <Greeting>
-          <Headline order={0}>Moin!<sup>*</sup></Headline>
+          <Headline order={0}>{greeting.utterance}
+            <Tooltip data-title={`That's "Hi!" in ${greeting.location}`}>*</Tooltip>
+          </Headline>
           <Description>
             Paste an url to get started<br/>
             No idea what to paste? Try this one:<br/>
@@ -44,93 +94,13 @@ export class StartView extends React.Component<StartProps> {
           }
         </StyledInputBar>
       </form>
-    )
-    /* return (
-      <form onSubmit={props.onSubmit}>
-        <StyledInputBar>
-          <StyledInput
-            placeholder="Please enter a GIT url"
-            onChange={props.onChange}
-            value={props.value}
-            />
-          <StyledInputButton disabled={!props.valid}>
-            <Text size="m">Add</Text>
-          </StyledInputButton>
-        </StyledInputBar>
-        {
-          props.projects.length > 0 &&
-            <StyledProjectList>
-              {
-                props.projects.map(p => (
-                  <StyledProjectItem highlighted={p.highlighted} key={p.model.id}>
-                    <Text>{p.model.url}</Text>
-                    <Text>{p.state}</Text>
-                    {p.state === ProjectViewState.Fetching &&
-                      <Text>{p.progress}</Text>
-                    }
-                    {
-                      p.error && (
-                        <Text>{p.error.message}</Text>
-                      )
-                    }
-                    <button
-                      type="button"
-                      disabled={p.inTransition()}
-                      onClick={() => p.model.remove()}
-                      >
-                      Remove
-                    </button>
-                    <button
-                      type="button"
-                      disabled={p.state !== ProjectViewState.Errored}
-                      onClick={() => p.model.process()}
-                      >
-                      Retry
-                    </button>
-                    <button
-                      type="button"
-                      disabled={p.inTransition()}
-                      onClick={() => p.model.install()}
-                      >
-                      Install
-                    </button>
-                    <button
-                      type="button"
-                      disabled={p.state !== ProjectViewState.Installed}
-                      onClick={() => p.model.build()}
-                      >
-                      Build
-                    </button>
-                    <button
-                      type="button"
-                      disabled={p.inTransition() || p.lt(ProjectViewState.Built)}
-                      onClick={p.state === ProjectViewState.Started ? () => p.model.stop(): () => p.model.start()}
-                      >
-                      {p.state === ProjectViewState.Started ? "Stop": "Start"}
-                    </button>
-                    <button
-                      type="button"
-                      disabled={p.state !== ProjectViewState.Started}
-                      onClick={() => p.model.open()}
-                      >
-                      Open
-                    </button>
-                    {
-                      props.src && (
-                        <React.Fragment>
-                          <StyledWebview src={props.src}/>
-                          <StyledWebviewButton onClick={() => p.model.close()}>Close</StyledWebviewButton>
-                        </React.Fragment>
-                      )
-                    }
-                  </StyledProjectItem>
-                ))}
-            </StyledProjectList>
-        }
-      </form>
-    ); */
+    );
   }
 }
+
+const Tooltip = styled.sup`
+  position: relative;
+`;
 
 const Greeting = styled.div`
   margin-top: 150px;
@@ -143,6 +113,30 @@ const Headline = styled.h1`
   font-weight: normal;
   color: #fff;
   margin: 0 0 30px 0;
+  cursor: help;
+
+  ${Tooltip} {
+    ::before {
+      position: absolute;
+      content: attr(data-title);
+      opacity: 0;
+      background: #000;
+      white-space: nowrap;
+      font-size: 20px;
+      padding: 5px 10px;
+      transform: translate(15px, -25%);
+      transition: all .3s ease-in-out;
+    }
+  }
+
+  &:hover {
+    ${Tooltip} {
+      ::before {
+        opacity: 1;
+        transform: translate(15px, -50%);
+      }
+    }
+  }
 `;
 
 const Description = styled.p`
