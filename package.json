@@ -4,18 +4,15 @@
   "description": "A shared space for system design and engineering.",
   "main": "./dist/main/main.js",
   "scripts": {
-    "build": "tsc",
-    "lint": "tslint -c tslint.json -p tsconfig.json",
-    "start": "tsc && concurrently \"tsc -w\" \"electron .\""
+    "build": "electron-webpack prod && electron-builder",
+    "start": "electron-webpack dev"
   },
   "repository": "https://github.com/electron/electron-quick-start-typescript",
   "keywords": [
-    "Electron",
-    "quick",
-    "start",
-    "tutorial",
-    "demo",
-    "typescript"
+    "patternplate",
+    "living stylguide",
+    "design system",
+    "component library"
   ],
   "author": {
     "name": "Mario Nebl",
@@ -47,6 +44,7 @@
     "eslint": "^4.19.1",
     "eslint-plugin-react": "^7.7.0",
     "native-ext-loader": "^2.0.0",
+    "node-loader": "^0.6.0",
     "shebang-loader": "^0.0.1",
     "ts-loader": "3",
     "tslint": "^5.9.1",
@@ -79,7 +77,6 @@
     "git-url-parse": "^8.2.0",
     "mobx": "^4.1.0",
     "mobx-react": "^5.0.0",
-    "node-git": "^0.0.0",
     "nodegit": "^0.21.2",
     "nodegit-kit": "^0.17.0",
     "npm": "^5.8.0",
