@@ -36,8 +36,10 @@ async function main() {
   const projects = ProjectViewCollection.fromStore(store);
   projects.items.map(item => item.analyse());
 
-  (global as any).start = start;
-  (global as any).projects = projects;
+  if (process.env.NODE_ENV !== "production") {
+    (global as any).start = start;
+    (global as any).projects = projects;
+  }
 
   try {
     ReactDOM.render(
