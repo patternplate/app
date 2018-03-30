@@ -70,7 +70,7 @@ export class StartView extends React.Component<StartProps> {
             <Tooltip data-title={`That's "Hi!" in ${greeting.location}`}>*</Tooltip>
           </Headline>
           <Description>
-            Paste an url to get started<br/>
+            Paste a patternplate URL to start.<br/>
             No idea what to paste? Try this one:<br/>
             <Link
               title="Add Alva Designkit"
