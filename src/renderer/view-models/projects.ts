@@ -17,8 +17,8 @@ export interface ProjectViewCollectionInit {
 
 export class ProjectViewCollection {
   private store: any;
-  private up: Observable<any> = new Subject();
-  private down: Observable<any> = new Subject();
+  public up: Observable<any> = new Subject();
+  public down: Observable<any> = new Subject();
 
   @observable public items: ProjectViewModel[];
 
@@ -138,9 +138,17 @@ export class ProjectViewCollection {
     });
   }
 
+  broadcast(payload: any) {
+    this.items.map(item => {
+      item.down.next(payload);
+    })
+  }
+
   toStore() {
     return this.items
       .filter(p => !p.editable)
       .map(p => ARSON.stringify(p));
   }
 }
+
+

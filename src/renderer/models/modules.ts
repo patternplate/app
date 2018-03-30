@@ -1,7 +1,6 @@
 import * as Fs from "fs";
 import * as Path from "path";
 import * as ChildProcess from "child_process";
-import * as execa from "execa";
 import * as uuid from "uuid";
 
 import {Channel} from "./nextable";
@@ -52,9 +51,9 @@ export class Modules<T extends Installable> {
     const id = uuid.v4();
     this.host.up.next(new Msg.Modules.ModulesInstallStartNotification(id));
 
-    const cp = execa(this.installer(), ["install", "--verbose"], {
+    const cp = ChildProcess.fork(this.installer(), ["install", "--verbose"], {
       cwd: this.host.path,
-      maxBuffer: Infinity
+      stdio: ["ipc", "pipe", "pipe"]
     });
 
     cp.stderr.on("data", (data) => {
@@ -65,11 +64,11 @@ export class Modules<T extends Installable> {
       console.log(String(data));
     });
 
-    cp.then((result) => {
+    cp.on("exit", (code) => {
+      if (code !== 0) {
+        return this.host.up.next(new Msg.Modules.ModulesInstallErrorNotification(id));
+      }
       this.host.up.next(new Msg.Modules.ModulesInstallEndNotification(id));
-    }).catch((err) => {
-      this.host.up.next(new Msg.Modules.ModulesInstallErrorNotification(id));
-      console.log({err});
     });
   }
 
@@ -84,7 +83,10 @@ export class Modules<T extends Installable> {
       return;
     }
 
-    const cp = execa(this.installer(), ["run", "build"], {cwd: this.host.path});
+    const cp = ChildProcess.fork(this.installer(), ["run", "build"], {
+      cwd: this.host.path,
+      stdio: ["ipc", "pipe", "pipe"]
+    });
 
     cp.stderr.on("data", (data) => {
       console.log(String(data));
@@ -94,11 +96,11 @@ export class Modules<T extends Installable> {
       console.log(String(data));
     });
 
-    cp.then((result) => {
+    cp.on("exit", (code) => {
+      if (code !== 0) {
+        return this.host.up.next(new Msg.Modules.ModulesBuildErrorNotification(id));
+      }
       this.host.up.next(new Msg.Modules.ModulesBuildEndNotification(id));
-    }).catch((err) => {
-      this.host.up.next(new Msg.Modules.ModulesBuildErrorNotification(id));
-      console.log({err});
     });
   }
 
@@ -106,19 +108,18 @@ export class Modules<T extends Installable> {
     const id = uuid.v4();
     this.host.up.next(new Msg.Modules.ModulesStartStartNotification(id));
 
-    execa(GET_PORT)
+    getPort()
       .catch((err: Error) => {
         // TODO: Emit cricital error here
         console.error(err);
       })
-      .then((result) => {
-        if (!result) {
+      .then((port) => {
+        if (typeof port !== "number") {
           // TODO: Emit cricital error here
           console.error("Failed to get open port");
           return;
         }
 
-        const port = Number(result.stdout);
         this.host.up.next(new Msg.Modules.ModulesStartPortNotification(id, port));
 
         this.cp = ChildProcess.fork(PATTERNPLATE, ["start", "--port", `${port}`], {cwd: this.host.path});
@@ -153,4 +154,25 @@ export class Modules<T extends Installable> {
     this.cp.kill("SIGTERM");
     this.host.up.next(new Msg.Modules.ModulesStopEndNotification(id))
   }
+}
+
+function getPort() {
+  return new Promise((resolve, reject) => {
+    const cp = ChildProcess.fork(GET_PORT, [], {
+      stdio: ["ipc", "pipe", "pipe"]
+    });
+
+    let stdout = "";
+
+    cp.stdout.on("data", (data) => {
+      stdout += data;
+    });
+
+    cp.on("exit", (code) => {
+      if (code !== 0) {
+        reject(new Error("get-port failed"));
+      }
+      resolve(Number(stdout));
+    });
+  });
 }

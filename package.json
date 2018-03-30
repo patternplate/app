@@ -22,13 +22,8 @@
   "build": {
     "appId": "com.patternplate.app",
     "productName": "patternplate",
-    "extraResources": [
-      "node_modules/.bin"
-    ],
     "files": [
-      "package.json",
-      "node_modules/**/*",
-      "dist/**/*"
+      "node_modules"
     ],
     "npmRebuild": false,
     "directories": {
@@ -102,5 +97,8 @@
     "uuid": "^3.2.1",
     "which": "^1.3.0",
     "yarn": "^1.5.1"
+  },
+  "resolutions": {
+    "nodegit": "0.21.2"
   }
 }

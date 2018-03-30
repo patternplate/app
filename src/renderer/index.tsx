@@ -2,16 +2,20 @@ import * as React from "react";
 import * as ReactDOM from "react-dom";
 import RedBox from "redbox-react";
 import { Provider } from "mobx-react";
+import * as uuid from "uuid";
 
 import { App } from "./app";
+import * as Msg from "./messages";
 import { StartViewModel } from "./view-models/start";
 import { ProjectViewCollection } from "./view-models/projects";
 
+const electron = require("electron");
 const Store = require("electron-store");
 const { injectGlobal } = require("@patternplate/components");
 
 async function main() {
   const store = new Store();
+  const window = electron.remote.getCurrentWindow();
 
   injectGlobal`
     html, body {
@@ -36,6 +40,50 @@ async function main() {
   const projects = ProjectViewCollection.fromStore(store);
   projects.items.map(item => item.analyse());
 
+  window.webContents.on("context-menu", (e, props) => {
+    const el = document.elementFromPoint(props.x, props.y);
+    const tid = uuid.v4();
+
+    projects.up.subscribe((message) => {
+      const match = Msg.match(message);
+
+      match(Msg.UI.ContextMenuResponse, () => {
+        if (message.tid !== tid) {
+          return;
+        }
+
+        const {project} = message;
+
+        const items = [
+          project.isReady() && {
+            label: "Start",
+            click: () => project.start()
+          },
+          project.isWorking() && {
+            label: "Abort",
+            click: () => {}
+          },
+          !project.isWorking() && !project.inTransition() && {
+            label: "Remove",
+            click: () => project.remove()
+          },
+          !project.inTransition() && !project.isWorking() && {
+            label: "Force sync",
+            click: () => project.clone()
+          },
+        ].filter(Boolean);
+
+        const menu = electron.remote.Menu.buildFromTemplate(items as any);
+
+        menu.popup(window, {
+          async: true
+        });
+      })
+    });
+
+    projects.broadcast(new Msg.UI.ContextMenuRequest(tid, el));
+  });
+
   if (process.env.NODE_ENV !== "production") {
     (global as any).start = start;
     (global as any).projects = projects;
@@ -44,7 +92,7 @@ async function main() {
   try {
     ReactDOM.render(
       <Provider start={start} projects={projects}>
-        <App/>
+        <App />
       </Provider>
     , el);
   } catch (error) {

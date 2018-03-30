@@ -121,16 +121,11 @@ export class Project implements Channel {
       });
 
       match(Msg.VCS.VCSCloneEndNotification, () => {
-        console.log({autoStart: this.autoStart});
-        if (this.autoStart) {
-          setTimeout(() => this.down.next(new Msg.Project.ProjectInstallRequest(this.id, this)), 0);
-        }
+        setTimeout(() => this.down.next(new Msg.Project.ProjectInstallRequest(this.id, this)), 0);
       });
 
       match(Msg.Modules.ModulesInstallEndNotification, () => {
-        if (this.autoStart) {
-          setTimeout(() => this.down.next(new Msg.Project.ProjectBuildRequest(this.id, this)), 0);
-        }
+        setTimeout(() => this.down.next(new Msg.Project.ProjectBuildRequest(this.id, this)), 0);
       });
     });
   }

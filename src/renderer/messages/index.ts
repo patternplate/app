@@ -1,6 +1,7 @@
-import * as VCS from "./vcs";
-import * as Project from "./project";
 import * as Modules from "./modules";
+import * as Project from "./project";
+import * as UI from "./ui";
+import * as VCS from "./vcs";
 
 export {match} from "./match";
-export {VCS, Modules, Project};
+export {Project, Modules, UI, VCS};
