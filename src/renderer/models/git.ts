@@ -1,5 +1,6 @@
 import * as Path from "path";
 import * as uuid from "uuid";
+import * as execa from "execa";
 
 import * as Msg from "../messages";
 import {VCS} from "../messages";
@@ -8,6 +9,11 @@ import {Channel} from "./nextable";
 const nodegit = require("nodegit");
 const git = require("nodegit-kit");
 const sander = require("@marionebl/sander");
+
+// Ensure bins uses here are available in node_modules
+require("npm/package");
+require("yarn/package");
+require("rimraf/package");
 
 export interface VersionControl {
   clone(n: Channel): void;
@@ -20,6 +26,9 @@ export interface VersionControllable extends Channel {
   path: string;
   url: string;
 }
+
+const PREFIX = require("find-up").sync("node_modules", {cwd: __dirname});
+const RIMRAF = Path.join(PREFIX, ".bin", "rimraf");
 
 export class Git<T extends VersionControllable> implements VersionControl {
   readonly host: T;
@@ -234,7 +243,12 @@ export class Git<T extends VersionControllable> implements VersionControl {
     }
 
     this.host.up.next(new VCS.VCSRemoveStartNotification(this.host.id));
-    sander.rimraf(this.host.path)
+
+    execa(RIMRAF, [this.host.path])
+      .catch(err => {
+        console.error(err);
+        // TODO: Not implemented yet, emit critical errors here
+      })
       .then(() => {
         this.host.up.next(new VCS.VCSRemoveEndNotification(this.host.id));
         this.host.up.next(new VCS.VCSRemoveResponse(this.host.id, (this.host as any).id));
