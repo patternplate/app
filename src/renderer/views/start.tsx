@@ -188,4 +188,3 @@ const StyledInput = styled.input`
     outline: none;
   }
 `;
-

@@ -26,6 +26,10 @@ export class ProjectViewCollection {
     return this.items.length;
   }
 
+  @computed get startedProject() {
+    return this.items.find(item => item.isStarted());
+  }
+
   static fromStore(store: any) {
     return new ProjectViewCollection({
       store,

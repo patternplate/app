@@ -1,8 +1,10 @@
 import * as React from "react";
 import { observer } from "mobx-react";
+import * as uuid from "uuid";
 
 import { ProjectViewModel, ProjectViewState } from "../view-models/project";
 import { ProjectViewCollection } from "../view-models/projects";
+import * as Msg from "../messages";
 
 const { keyframes, styled, Text } = require("@patternplate/components");
 const { Animated } = require("react-web-animation");
@@ -32,6 +34,9 @@ const getPhase = (state: ProjectViewState): string => {
         return "Installing";
       case ProjectViewState.Building:
         return "Building";
+      case ProjectViewState.Starting:
+      case ProjectViewState.Opening:
+        return "Starting";
       case ProjectViewState.Removing:
         return "Removing";
       default:
@@ -66,11 +71,19 @@ export class ProjectsView extends React.Component<ProjectsProps> {
                 key={project.id}
                 onSubmit={(e: any) => {
                   e.preventDefault();
-                  project.editable ? project.save() : project.open();
+                  if (project.editable) {
+                    return project.save();
+                  }
+                  if (project.isReady()) {
+                    project.start();
+                  }
                 }}
                 onReset={(e: any) => {
                   e.preventDefault();
-                  project.editable ? project.discard() : project.remove();
+                  if (project.editable) {
+                    return project.discard();
+                  }
+                  project.remove();
                 }}
                 >
                 <ProjectTile
@@ -94,24 +107,60 @@ export class ProjectsView extends React.Component<ProjectsProps> {
                         value={project.inputUrl || project.url || ""}
                         />
                     </ProjectProperties>
-                    <ProjectActions>
-                      <ProjectAction
-                        actionType="negative"
-                        type="reset"
-                        >
-                        <Text>{project.editable ? "Discard" : "Remove"}</Text>
-                      </ProjectAction>
-                      <ProjectAction
-                        actionType="affirmative"
-                        type="submit"
-                        >
-                        <Text>{project.editable ? "Save" : "Open"}</Text>
-                      </ProjectAction>
-                    </ProjectActions>
+                    {
+                      project.editable &&
+                        <ProjectActions>
+                          <ProjectAction
+                            actionType="negative"
+                            type="reset"
+                            >
+                            <Text>Discard</Text>
+                          </ProjectAction>
+                          <ProjectAction
+                            actionType="affirmative"
+                            type="submit"
+                            >
+                            <Text>Save</Text>
+                          </ProjectAction>
+                        </ProjectActions>
+                    }
+                    {
+                      project.isWorking() &&
+                        <ProjectActions>
+                          <ProjectAction
+                            actionType="negative"
+                            type="reset"
+                            >
+                            <Text>Abort</Text>
+                          </ProjectAction>
+                        </ProjectActions>
+                    }
+                    {
+                      project.isReady() && !project.editable &&
+                        <PrimaryProjectActions>
+                          <PrimaryProjectAction
+                            actionType="affirmative"
+                            order="primary"
+                            type="submit"
+                            >
+                            <Text>Start</Text>
+                          </PrimaryProjectAction>
+                        </PrimaryProjectActions>
+                    }
                 </ProjectTile>
               </form>
           ))}
         </ProjectsList>
+        {
+          props.projects.startedProject &&
+            <React.Fragment>
+              <WebView
+                port={props.projects.startedProject.port}
+                onCloseClick={() => (props.projects.startedProject as ProjectViewModel).stop()}
+                project={props.projects.startedProject}
+                />
+            </React.Fragment>
+        }
       </StyledProjectsView>
     );
   }
@@ -263,6 +312,38 @@ const ProjectActions = styled.div`
   );
 `;
 
+const PrimaryProjectActions = styled.div`
+  display: flex;
+  align-items: center;
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  padding: 20px 0 20px 45px;
+  margin-right: 10px;
+  background-image: linear-gradient(
+    to right,
+    rgba(255, 255, 255, 0),
+    rgba(255, 255, 255, 1) 20%
+  );
+`;
+
+const PrimaryProjectAction = styled.button`
+  padding: 3px 7px;
+  background: ${(props: any) => props.actionType === "negative" ? props.theme.error : props.theme.active};
+  border: none;
+  border-radius: 2px;
+  text-align: left;
+  cursor: pointer;
+  color: #fff;
+  &:not(:last-child) {
+    margin-right: 10px;
+  }
+  &:focus {
+    outline: none;
+  }
+`;
+
 const ProjectAction = styled.button`
   background: none;
   border: none;
@@ -385,4 +466,62 @@ const StyledPropertyInput = styled.input`
     outline: none;
     border: ${(props: any) => props.readOnly ? "1.5px dashed transparent" : "1.5px dashed #999"};
   }
+`;
+
+
+interface WebViewProps {
+  onCloseClick: React.MouseEventHandler<HTMLButtonElement>;
+  port: number;
+  project: ProjectViewModel;
+}
+
+class WebView extends React.Component<WebViewProps> {
+  ref?: any;
+
+  componentDidMount() {
+    if (this.ref) {
+      const tid = uuid.v4();
+      this.props.project.up.next(new Msg.Project.ProjectOpenNotification(tid, this.props.project.id));
+
+      this.ref.addEventListener("did-finish-load", () => {
+        this.props.project.up.next(new Msg.Project.ProjectOpenedNotification(tid));
+      });
+    }
+  }
+
+  render() {
+    const {props} = this;
+    return (
+      <StyledWebviewContainer loaded={props.project.isOpened()}>
+        <StyledWebviewButton onClick={() => props.project.stop()}>Close</StyledWebviewButton>
+        <StyledWebview innerRef={(ref: any) => this.ref = ref} src={`http://localhost:${props.project.port}`}/>
+      </StyledWebviewContainer>
+    )
+  }
+}
+
+const StyledWebviewContainer = styled.div`
+  position: fixed;
+  z-index: 1;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  transform: ${(props: any) => props.loaded ? `translateY(0)` : `translateY(100%)`};
+`;
+
+const StyledWebview = styled("webview")`
+  position: absolute;
+  z-index: 1;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+`;
+
+const StyledWebviewButton = styled.button`
+  position: fixed;
+  z-index: 2;
+  top: 22px;
+  left: 20px;
 `;

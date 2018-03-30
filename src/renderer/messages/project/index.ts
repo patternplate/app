@@ -5,6 +5,7 @@ export {ProjectProcessResponse} from "./project-process-response";
 export {ProjectStartRequest} from "./project-start-request";
 export {ProjectBuildRequest} from "./project-build-request";
 export {ProjectOpenNotification} from "./project-open-notification";
+export {ProjectOpenedNotification} from "./project-opened-notification";
 export {ProjectCloseNotification} from "./project-close-notification";
 export {ProjectAnalyseRequest} from "./project-analyse-request";
 export {ProjectAnalyseResponse} from "./project-analyse-response";

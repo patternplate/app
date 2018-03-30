@@ -10,6 +10,7 @@ export {ModulesBuildErrorNotification} from "./modules-build-error-notification"
 
 export {ModulesStartRequest} from "./modules-start-request";
 export {ModulesStartStartNotification} from "./modules-start-start-notification";
+export {ModulesStartPortNotification} from "./modules-start-port-notification";
 export {ModulesStartStartedNotification} from "./modules-start-started-notification";
 export {ModulesStartErrorNotification} from "./modules-start-error-notification";
 

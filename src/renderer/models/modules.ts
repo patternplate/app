@@ -7,15 +7,20 @@ import * as uuid from "uuid";
 import {Channel} from "./nextable";
 import * as Msg from "../messages";
 
-const getPort = require("get-port");
 const ARSON = require("arson");
 const readPkg = require("read-pkg");
 
 const PREFIX = require("find-up").sync("node_modules", {cwd: __dirname});
 
+require("yarn/package");
+require("npm/package");
+require("@patternplate/cli/package");
+require("get-port-cli/package");
+
 const YARN = Path.join(PREFIX, ".bin", "yarn");
 const NPM = Path.join(PREFIX, ".bin", "npm");
 const PATTERNPLATE = Path.join(PREFIX, ".bin", "patternplate");
+const GET_PORT = Path.join(PREFIX, ".bin", "get-port");
 
 export interface Installable extends Channel {
   id: string;
@@ -101,8 +106,21 @@ export class Modules<T extends Installable> {
     const id = uuid.v4();
     this.host.up.next(new Msg.Modules.ModulesStartStartNotification(id));
 
-    getPort()
-      .then((port: number) => {
+    execa(GET_PORT)
+      .catch((err: Error) => {
+        // TODO: Emit cricital error here
+        console.error(err);
+      })
+      .then((result) => {
+        if (!result) {
+          // TODO: Emit cricital error here
+          console.error("Failed to get open port");
+          return;
+        }
+
+        const port = Number(result.stdout);
+        this.host.up.next(new Msg.Modules.ModulesStartPortNotification(id, port));
+
         this.cp = ChildProcess.fork(PATTERNPLATE, ["start", "--port", `${port}`], {cwd: this.host.path});
 
         this.cp.on("message", (envelope: any) => {

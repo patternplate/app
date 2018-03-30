@@ -9,12 +9,14 @@ export enum ProjectViewState {
   Unknown = "UNKNOW",
   Fetching = "FETCHING",
   Fetched = "FETCHED",
-  Building = "BUILDING",
-  Built = "BUILT",
   Installing = "INSTALLING",
   Installed = "INSTALLED",
+  Building = "BUILDING",
+  Built = "BUILT",
   Starting = "STARTING",
   Started = "STARTED",
+  Opening = "OPENING",
+  Opened = "OPENED",
   Stopping = "STOPPING",
   Stopped = "STOPPED",
   Errored = "ERRORED",
@@ -30,12 +32,14 @@ const STATE_ORDER = [
   ProjectViewState.Unknown,
   ProjectViewState.Fetching,
   ProjectViewState.Fetched,
-  ProjectViewState.Building,
-  ProjectViewState.Built,
   ProjectViewState.Installing,
   ProjectViewState.Installed,
+  ProjectViewState.Building,
+  ProjectViewState.Built,
   ProjectViewState.Starting,
   ProjectViewState.Started,
+  ProjectViewState.Opening,
+  ProjectViewState.Opened,
   ProjectViewState.Stopped,
 ];
 
@@ -44,6 +48,8 @@ const WORKING_STATES = [
   ProjectViewState.Building,
   ProjectViewState.Installing,
   ProjectViewState.Removing,
+  ProjectViewState.Starting,
+  ProjectViewState.Opening
 ];
 
 const TRANSITION_STATES = [
@@ -108,8 +114,6 @@ export class ProjectViewModel {
         if (message.installed) {
           this.setState(ProjectViewState.Installed);
           const PREV_STATE = STATE_ORDER.indexOf(this.model.previous.state);
-
-          console.log(this.model.previous);
 
           // If no diff happened and the persisted model had been build
           // assume the current state has a build, too
@@ -191,6 +195,14 @@ export class ProjectViewModel {
       match(Msg.Modules.ModulesStopEndNotification, (notification) => {
         this.setState(ProjectViewState.Stopped);
       });
+
+      match(Msg.Project.ProjectOpenNotification, () => {
+        this.setState(ProjectViewState.Opening);
+      });
+
+      match(Msg.Project.ProjectOpenedNotification, () => {
+        this.setState(ProjectViewState.Opened);
+      })
     });
 
     this.model.up.subscribe((message: any) => {
@@ -209,6 +221,18 @@ export class ProjectViewModel {
 
   isWorking(): boolean {
     return WORKING_STATES.indexOf(this.state) > -1;
+  }
+
+  isReady(): boolean {
+    return this.gte(ProjectViewState.Built);
+  }
+
+  isStarted(): boolean {
+    return this.gte(ProjectViewState.Started) && this.lt(ProjectViewState.Stopped);
+  }
+
+  isOpened(): boolean {
+    return this.state === ProjectViewState.Opened;
   }
 
   inTransition(): boolean {
@@ -280,20 +304,26 @@ export class ProjectViewModel {
 
   clone() {
     const tid = uuid.v4();
-    this.down.next(new Msg.VCS.VCSCloneRequest(tid, this.model));
+    setTimeout(() => this.down.next(new Msg.VCS.VCSCloneRequest(tid, this.model)));
   }
 
-  @action open() {
-    throw new Error("Not implemented yet");
-  }
-
-  @action edit() {
-    throw new Error("Not implemented yet");
-  }
-
-  @action remove() {
+  start() {
     const tid = uuid.v4();
-    this.down.next(new Msg.VCS.VCSRemoveRequest(tid));
+    setTimeout(() => this.down.next(new Msg.Modules.ModulesStartRequest(tid)));
+  }
+
+  stop() {
+    const tid = uuid.v4();
+    setTimeout(() => this.down.next(new Msg.Modules.ModulesStopRequest(tid)));
+  }
+
+  edit() {
+    throw new Error("Not implemented yet");
+  }
+
+  remove() {
+    const tid = uuid.v4();
+    setTimeout(() => this.down.next(new Msg.VCS.VCSRemoveRequest(tid)));
   }
 
   @action save() {

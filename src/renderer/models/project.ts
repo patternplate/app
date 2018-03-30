@@ -59,7 +59,8 @@ export class Project implements Channel {
       name: input.name,
       url: input.url,
       path: Path.join(Os.homedir(), "patternplate"),
-      previous: null
+      previous: null,
+      autoStart: true
     });
   }
 
