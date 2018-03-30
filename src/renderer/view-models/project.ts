@@ -57,8 +57,6 @@ const TRANSITION_STATES = [
   ProjectViewState.Removing,
 ];
 
-const BUILT = STATE_ORDER.indexOf(ProjectViewState.Built);
-
 export class ProjectViewModel {
   private model: Project;
   private highlightTimer: NodeJS.Timer | null = null;
@@ -113,11 +111,9 @@ export class ProjectViewModel {
         }
         if (message.installed) {
           this.setState(ProjectViewState.Installed);
-          const PREV_STATE = STATE_ORDER.indexOf(this.model.previous.state);
 
-          // If no diff happened and the persisted model had been build
-          // assume the current state has a build, too
-          if (message.diff.length === 0 && PREV_STATE >= BUILT) {
+          // If no diff happened assume the current state has a build, too
+          if (message.diff.length === 0) {
             this.setState(ProjectViewState.Built);
           }
         }

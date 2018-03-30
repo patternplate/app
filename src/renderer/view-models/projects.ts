@@ -36,6 +36,7 @@ export class ProjectViewCollection {
       items: (store.get("projects") || [])
         .map((serialized: any) => {
           const data = ARSON.parse(serialized);
+          console.log({data});
           const project = Project.from({
             url: data.model.url,
             name: data.model.name,
