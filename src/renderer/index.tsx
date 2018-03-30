@@ -34,6 +34,7 @@ async function main() {
 
   const start = StartViewModel.fromStore(store);
   const projects = ProjectViewCollection.fromStore(store);
+  projects.items.map(item => item.analyse());
 
   try {
     ReactDOM.render(

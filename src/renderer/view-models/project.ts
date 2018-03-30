@@ -36,15 +36,19 @@ const STATE_ORDER = [
   ProjectViewState.Installed,
   ProjectViewState.Starting,
   ProjectViewState.Started,
-  ProjectViewState.Stopped
+  ProjectViewState.Stopped,
 ];
 
-const TRANSITION_STATES = [
+const WORKING_STATES = [
   ProjectViewState.Fetching,
   ProjectViewState.Building,
   ProjectViewState.Installing,
+  ProjectViewState.Removing,
+];
+
+const TRANSITION_STATES = [
   ProjectViewState.Stopping,
-  ProjectViewState.Removing
+  ProjectViewState.Removing,
 ];
 
 const BUILT = STATE_ORDER.indexOf(ProjectViewState.Built);
@@ -103,8 +107,9 @@ export class ProjectViewModel {
         }
         if (message.installed) {
           this.setState(ProjectViewState.Installed);
-
           const PREV_STATE = STATE_ORDER.indexOf(this.model.previous.state);
+
+          console.log(this.model.previous);
 
           // If no diff happened and the persisted model had been build
           // assume the current state has a build, too
@@ -202,6 +207,10 @@ export class ProjectViewModel {
     });
   }
 
+  isWorking(): boolean {
+    return WORKING_STATES.indexOf(this.state) > -1;
+  }
+
   inTransition(): boolean {
     return TRANSITION_STATES.indexOf(this.state) > -1;
   }
@@ -263,6 +272,10 @@ export class ProjectViewModel {
     } catch (err) {
       this.inputName = "";
     }
+  }
+
+  analyse() {
+    this.model.analyse();
   }
 
   clone() {

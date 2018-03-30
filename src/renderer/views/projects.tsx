@@ -1,10 +1,10 @@
 import * as React from "react";
 import { observer } from "mobx-react";
 
-import { ProjectViewModel } from "../view-models/project";
+import { ProjectViewModel, ProjectViewState } from "../view-models/project";
 import { ProjectViewCollection } from "../view-models/projects";
 
-const { styled, Text } = require("@patternplate/components");
+const { keyframes, styled, Text } = require("@patternplate/components");
 const { Animated } = require("react-web-animation");
 
 const WIGGLE = [
@@ -23,6 +23,21 @@ const WIGGLE = [
     transform: "rotate(0deg)"
   },
 ];
+
+const getPhase = (state: ProjectViewState): string => {
+    switch(state) {
+      case ProjectViewState.Fetching:
+        return "Fetching";
+      case ProjectViewState.Installing:
+        return "Installing";
+      case ProjectViewState.Building:
+        return "Building";
+      case ProjectViewState.Removing:
+        return "Removing";
+      default:
+        return "";
+    }
+}
 
 export interface ProjectsProps {
   projects: ProjectViewCollection;
@@ -63,7 +78,10 @@ export class ProjectsView extends React.Component<ProjectsProps> {
                   timing={{duration: 300, iterations: 2}}
                   keyframes={WIGGLE}
                   >
-                    <ProjectIcon/>
+                    <ProjectIcon
+                      loading={project.isWorking()}
+                      label={getPhase(project.state)}
+                      />
                     <ProjectProperties>
                       <ProjectName
                         onChange={(e: any) => project.setInputName(e.target.value)}
@@ -163,13 +181,64 @@ const ProjectsList = styled.ul`
   padding: 0;
 `;
 
-const ProjectIcon = styled.div`
+interface ProjectIconProps {
+  loading: boolean;
+  label: string;
+}
+
+const ProjectIcon = (props: ProjectIconProps) => (
+  <StyledProjectIcon>
+    <div/>
+    <Text>{props.label}</Text>
+    <IconCircumfence loading={props.loading}>
+      <circle cx="50" cy="50" r="49"/>
+    </IconCircumfence>
+  </StyledProjectIcon>
+);
+
+const CIRCUM_FENCE = 2 * Math.PI * 50;
+const SPIN = keyframes`
+  from {
+    transform: rotate(-90deg);
+  }
+  50% {
+    transform: rotate(90deg)
+  }
+  100% {
+    transform: rotate(270deg);
+  }
+`;
+
+const IconCircumfence = styled.svg.attrs({ viewBox: "0 0 100 100" })`
+  position: absolute;
+  width: 90px;
+  height: 90px;
+  circle {
+    fill: transparent;
+    stroke-width: ${(props: any) => props.loading ? 1: 0};
+    stroke: black;
+    stroke-dasharray: ${CIRCUM_FENCE};
+    stroke-dashoffset: -339;
+    transform: rotate(-90deg);
+    transform-origin: center;
+    animation: ${SPIN} .5s infinite linear;
+    animation-play-state: ${(props: any) => props.loading ? "running": "paused"};
+  }
+`;
+
+const StyledProjectIcon = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
   flex: 0 0 90px;
   height: 90px;
   width: 90px;
   border-radius: 50%;
   box-shadow: 0 0 6px rgba(0, 0, 0, 0.12);
   margin-right: 15px;
+  overflow: hidden;
+  font-size: 13px;
+  color: #999;
 `;
 
 const ProjectProperties = styled.div`
