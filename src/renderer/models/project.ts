@@ -44,9 +44,10 @@ export class Project implements Channel {
   static createEmpty(): Project {
     return new Project({
       url: "",
-      path: "",
+      path: Path.join(Os.homedir(), "patternplate"),
       name: "",
-      previous: null
+      previous: null,
+      autoStart: true
     });
   }
 
@@ -120,6 +121,7 @@ export class Project implements Channel {
       });
 
       match(Msg.VCS.VCSCloneEndNotification, () => {
+        console.log({autoStart: this.autoStart});
         if (this.autoStart) {
           setTimeout(() => this.down.next(new Msg.Project.ProjectInstallRequest(this.id, this)), 0);
         }
