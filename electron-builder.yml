@@ -1,9 +1,8 @@
 extends: ./node_modules/electron-webpack/electron-builder.yml
-appId: com.patternplate.app,
+appId: com.patternplate.app
 productName: patternplate
 npmRebuild: false
 extraResources:
   - node_modules
-  - test/**/*
 directories:
   output: "app"

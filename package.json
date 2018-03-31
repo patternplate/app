@@ -19,17 +19,6 @@
     "email": "mario.nebl@sinnerschrader.com"
   },
   "license": "MIT",
-  "build": {
-    "appId": "com.patternplate.app",
-    "productName": "patternplate",
-    "files": [
-      "node_modules"
-    ],
-    "npmRebuild": false,
-    "directories": {
-      "output": "./app"
-    }
-  },
   "devDependencies": {
     "babel-plugin-module-resolver": "^3.1.1",
     "concurrently": "^3.5.1",
