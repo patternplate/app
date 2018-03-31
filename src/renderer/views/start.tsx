@@ -103,7 +103,6 @@ const Tooltip = styled.sup`
 `;
 
 const Greeting = styled.div`
-  margin-top: 150px;
   margin-bottom: 45px;
 `;
 

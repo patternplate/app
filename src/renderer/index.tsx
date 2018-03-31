@@ -25,9 +25,12 @@ async function main() {
       height: 100%;
     }
     body {
+      box-sizing: border-box;
       width: 100%;
+      height: 100%;
       min-width: 500px;
       margin: 0;
+      padding-top: 40px;
       background: #0F0F32;
     }
     [data-mount] {
@@ -88,7 +91,6 @@ async function main() {
   });
 
   electron.ipcRenderer.on("menu-request-new", () => {
-    console.log("!");
     projects.addEmptyProject();
   });
 

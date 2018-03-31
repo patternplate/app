@@ -48,7 +48,6 @@ export class ProjectsView extends React.Component<ProjectsProps> {
 }
 
 const StyledProjectsView = styled.div`
-  margin-top: 150px;
 `;
 
 const ProjectsHeader = styled.div`
@@ -146,11 +145,12 @@ class WebView extends React.Component<WebViewProps> {
 const StyledWebviewContainer = styled.div`
   position: fixed;
   z-index: 1;
-  top: 0;
+  top: 40px;
   left: 0;
   right: 0;
   bottom: 0;
   transform: ${(props: any) => props.loaded ? `translateY(0)` : `translateY(100%)`};
+  background: #0F0F32;
 `;
 
 const StyledWebview = styled("webview")`

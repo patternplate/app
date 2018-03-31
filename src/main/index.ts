@@ -1,4 +1,4 @@
-import { app, BrowserWindow, Menu } from "electron";
+import { app, screen, BrowserWindow, Menu } from "electron";
 import * as Path from "path";
 import * as Url from "url";
 
@@ -17,9 +17,16 @@ async function createWindow() {
     console.warn(err);
   }
 
+  const { width = 1280, height = 800 } = screen.getPrimaryDisplay().workAreaSize;
+
   // Create the browser window.
   mainWindow = new BrowserWindow({
+    width,
+    height,
     minWidth: 600,
+    minHeight: 380,
+    titleBarStyle: "hiddenInset",
+    title: "patternplate"
   });
 
   // and load the index.html of the app.
