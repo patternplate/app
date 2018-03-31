@@ -20,11 +20,13 @@ interface InjectedAppProps {
 export class App extends React.Component {
   render() {
     const props = this.props as InjectedAppProps;
+    const started = props.projects.startedProject;
+    const opened = started && started.isOpened() ? started : null;
 
     return (
       <ThemeProvider theme={themes().dark}>
         <React.Fragment>
-          <Chrome/>
+          <Chrome title={["patternplate", opened ? opened.name : ""].filter(Boolean).join(" – ")}/>
           <Tower>
             {
               props.projects.length === 0 &&
@@ -76,12 +78,16 @@ const Tower = styled.div`
   height: 100%;
 `;
 
-const Chrome = () => {
+interface ChromeProps {
+  title: string;
+}
+
+const Chrome = (props: ChromeProps) => {
   return (
     <StyledChrome>
       <StyledChromeText>
         <StyledChromeIcon symbol="patternplate"/>
-        patternplate
+        {props.title}
       </StyledChromeText>
     </StyledChrome>
   );
