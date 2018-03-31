@@ -18,7 +18,7 @@ require("get-port-cli/package");
 
 const YARN = Path.join(PREFIX, ".bin", "yarn");
 const NPM = Path.join(PREFIX, ".bin", "npm");
-const PATTERNPLATE = Path.join(PREFIX, ".bin", "patternplate");
+// const PATTERNPLATE = Path.join(PREFIX, ".bin", "patternplate");
 const GET_PORT = Path.join(PREFIX, ".bin", "get-port");
 
 export interface Installable extends Channel {
@@ -122,7 +122,8 @@ export class Modules<T extends Installable> {
 
         this.host.up.next(new Msg.Modules.ModulesStartPortNotification(id, port));
 
-        this.cp = ChildProcess.fork(PATTERNPLATE, ["start", "--port", `${port}`], {cwd: this.host.path});
+        const pp = Path.join(this.host.path, "node_modules", ".bin", "patternplate");
+        this.cp = ChildProcess.fork(pp, ["start", "--port", `${port}`], {cwd: this.host.path});
 
         this.cp.on("message", (envelope: any) => {
           const instance = ARSON.parse(envelope);
