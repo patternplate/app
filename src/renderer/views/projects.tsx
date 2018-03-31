@@ -7,6 +7,7 @@ import { ProjectViewModel } from "../view-models/project";
 import { ProjectViewCollection } from "../view-models/projects";
 import * as Msg from "../../messages";
 
+const electron = require("electron");
 const { Icon, styled, Text } = require("@patternplate/components");
 
 export interface ProjectsProps {
@@ -127,6 +128,10 @@ class WebView extends React.Component<WebViewProps> {
 
       this.ref.addEventListener("did-finish-load", () => {
         this.props.project.up.next(new Msg.Project.ProjectOpenedNotification(tid));
+      });
+
+      this.ref.addEventListener("new-window", (e: any) => {
+        electron.shell.openExternal(e.url);
       });
     }
   }
