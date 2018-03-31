@@ -2,12 +2,16 @@ import * as Fs from "fs";
 import * as Path from "path";
 import * as ChildProcess from "child_process";
 import * as uuid from "uuid";
+import * as semver from "semver";
+import * as resolveFrom from "resolve-from";
+import * as loadJsonFile from "load-json-file";
 
 import {Channel} from "./nextable";
 import * as Msg from "../messages";
 
 const ARSON = require("arson");
 const readPkg = require("read-pkg");
+const loadConfig = require("@patternplate/load-config");
 
 const PREFIX = require("find-up").sync("node_modules", {cwd: __dirname});
 
@@ -18,7 +22,7 @@ require("get-port-cli/package");
 
 const YARN = Path.join(PREFIX, ".bin", "yarn");
 const NPM = Path.join(PREFIX, ".bin", "npm");
-// const PATTERNPLATE = Path.join(PREFIX, ".bin", "patternplate");
+const PATTERNPLATE = Path.join(PREFIX, ".bin", "patternplate");
 const GET_PORT = Path.join(PREFIX, ".bin", "get-port");
 
 export interface Installable extends Channel {
@@ -38,6 +42,7 @@ export class Modules<T extends Installable> {
       const match = Msg.match(message);
       match(Msg.Modules.ModulesInstallRequest, () => this.install());
       match(Msg.Modules.ModulesBuildRequest, () => this.build());
+      match(Msg.Modules.ModulesConfigureRequest, () => this.configure());
       match(Msg.Modules.ModulesStartRequest, () => this.start());
       match(Msg.Modules.ModulesStopRequest, () => this.stop());
     });
@@ -68,8 +73,21 @@ export class Modules<T extends Installable> {
       if (code !== 0) {
         return this.host.up.next(new Msg.Modules.ModulesInstallErrorNotification(id));
       }
+
       this.host.up.next(new Msg.Modules.ModulesInstallEndNotification(id));
     });
+  }
+
+  private configure() {
+    const id = uuid.v4();
+
+    loadConfig({ cwd: this.host.path })
+      .then((config: any) => {
+        return this.host.up.next(new Msg.Modules.ModulesConfigureResponse(id, config));
+      })
+      .catch((err: Error) => {
+        console.error(err);
+      });
   }
 
   private build() {
@@ -78,12 +96,16 @@ export class Modules<T extends Installable> {
     const pkg = readPkg.sync(this.host.path);
     const scripts = pkg.scripts || {};
 
-    if (!scripts.hasOwnProperty("build")) {
+    if (!scripts.hasOwnProperty("build") && !scripts.hasOwnProperty("patternplate:build")) {
       this.host.up.next(new Msg.Modules.ModulesBuildEndNotification(id));
       return;
     }
 
-    const cp = ChildProcess.fork(this.installer(), ["run", "build"], {
+    const runScript = scripts.hasOwnProperty("patternplate:build")
+      ? "patternplate:build"
+      : "build";
+
+    const cp = ChildProcess.fork(this.installer(), ["run", runScript], {
       cwd: this.host.path,
       stdio: ["ipc", "pipe", "pipe"]
     });
@@ -122,7 +144,8 @@ export class Modules<T extends Installable> {
 
         this.host.up.next(new Msg.Modules.ModulesStartPortNotification(id, port));
 
-        const pp = Path.join(this.host.path, "node_modules", ".bin", "patternplate");
+        const pp = getExectuable({cwd: this.host.path});
+
         this.cp = ChildProcess.fork(pp, ["start", "--port", `${port}`], {cwd: this.host.path});
 
         this.cp.on("message", (envelope: any) => {
@@ -176,4 +199,39 @@ function getPort() {
       resolve(Number(stdout));
     });
   });
+}
+
+interface ExecOpts {
+  cwd: string;
+}
+
+function getExectuable({cwd}: ExecOpts): string {
+  const resolved = resolveFrom(cwd, "@patternplate/cli/package");
+
+  if (!resolved) {
+    return PATTERNPLATE;
+  }
+
+  const pkg = attempt(resolved);
+
+  if (!pkg) {
+    return PATTERNPLATE;
+  }
+
+  const {version = ''} = pkg;
+
+  if (semver.lt(version, "2.0.0-93")) {
+    return PATTERNPLATE;
+  }
+
+  return Path.join(Path.dirname(resolved), pkg.bin.patternplate);
+}
+
+function attempt(path: string): any {
+  try {
+    return loadJsonFile.sync(path);
+  } catch (err) {
+    console.error(err);
+    return null;
+  }
 }

@@ -149,7 +149,7 @@ class WebView extends React.Component<WebViewProps> {
 
 const StyledWebviewContainer = styled.div`
   position: fixed;
-  z-index: 1;
+  z-index: 9;
   top: 40px;
   left: 0;
   right: 0;

@@ -3,7 +3,7 @@ import {observer} from "mobx-react";
 import * as Msg from "../../messages";
 import {ProjectViewModel, ProjectViewState} from "../view-models";
 
-const { keyframes, styled, Text } = require("@patternplate/components");
+const { keyframes, styled, Icon, Text } = require("@patternplate/components");
 const { Animated } = require("react-web-animation");
 
 export interface ProjectViewProps {
@@ -62,6 +62,7 @@ export class ProjectView extends React.Component<ProjectViewProps> {
           keyframes={WIGGLE}
         >
           <ProjectIcon
+            icon={props.project.logo}
             loading={props.project.isWorking()}
             label={getPhase(props.project.state)}
           />
@@ -155,12 +156,19 @@ const ProjectProperties = styled.div`
 interface ProjectIconProps {
   loading: boolean;
   label: string;
+  icon: string;
 }
 
 const ProjectIcon = (props: ProjectIconProps) => (
   <StyledProjectIcon>
-    <div/>
-    <Text>{props.label}</Text>
+    <StyledIconContainer>
+      {
+        props.icon
+          ? <div dangerouslySetInnerHTML={{__html: props.icon}}/>
+          : <StyledDefaultIcon/>
+      }
+    </StyledIconContainer>
+    <StyledIconText><span>{props.label}</span></StyledIconText>
     <IconCircumfence loading={props.loading}>
       <circle cx="50" cy="50" r="49"/>
     </IconCircumfence>
@@ -177,6 +185,43 @@ const SPIN = keyframes`
   }
   100% {
     transform: rotate(270deg);
+  }
+`;
+
+const StyledIconContainer = styled.div`
+  position: absolute;
+  width: 90px;
+  height: 90px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+`;
+
+const StyledDefaultIcon = styled(Icon).attrs({ symbol: "patternplate" })`
+  width: 60px;
+  height: 60px;
+`;
+
+const StyledIconText = styled(Text)`
+  position: relative;
+
+  > span {
+    position: relative;
+    z-index: 2;
+  }
+
+  &::before {
+    content: '';
+    position: absolute;
+    z-index: 1;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    background: rgba(255, 255, 255, 1);
+    transform: scale(1.5);
+    transform-origin: center;
+    filter: blur(3px);
   }
 `;
 

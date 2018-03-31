@@ -36,7 +36,6 @@ export class ProjectViewCollection {
       items: (store.get("projects") || [])
         .map((serialized: any) => {
           const data = ARSON.parse(serialized);
-          console.log({data});
           const project = Project.from({
             url: data.model.url,
             name: data.model.name,
@@ -53,6 +52,7 @@ export class ProjectViewCollection {
     this.items = init.items;
 
     this.items.forEach(item => this.bind(item));
+    this.listen();
   }
 
   @action
@@ -69,6 +69,7 @@ export class ProjectViewCollection {
     const viewModel = new ProjectViewModel(model);
     this.items.push(viewModel);
     this.bind(viewModel);
+    this.listen();
 
     this.store.set("projects", this.toStore());
     return viewModel;
@@ -86,6 +87,7 @@ export class ProjectViewCollection {
     const empty = ProjectViewModel.createEmpty();
     this.items.unshift(empty);
     this.bind(empty);
+    this.listen();
   }
 
   @action
@@ -98,7 +100,9 @@ export class ProjectViewCollection {
   bind(item: ProjectViewModel) {
     this.up = merge(this.up, item.up);
     this.down = merge(this.down, item.down);
+  }
 
+  listen() {
     this.up.subscribe((message: any) => {
       console.log('up', message);
       const match = Msg.match(message);

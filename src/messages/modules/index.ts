@@ -3,6 +3,9 @@ export {ModulesInstallStartNotification} from "./modules-install-start-notificat
 export {ModulesInstallEndNotification} from "./modules-install-end-notification";
 export {ModulesInstallErrorNotification} from "./modules-install-error-notification";
 
+export {ModulesConfigureRequest} from "./modules-configure-request";
+export {ModulesConfigureResponse} from "./modules-configure-response";
+
 export {ModulesBuildRequest} from "./modules-build-request";
 export {ModulesBuildStartNotification} from "./modules-build-start-notification";
 export {ModulesBuildEndNotification} from "./modules-build-end-notification";

@@ -32,6 +32,7 @@ export class Project implements Channel {
   public url: string;
   public name: string;
   public path: string;
+  public config: any;
   public autoStart: boolean = false;
   public readonly id: string;
   public readonly vcs: VersionControl;
@@ -95,6 +96,7 @@ export class Project implements Channel {
       const match = Msg.match(message);
       match(Msg.Project.ProjectProcessRequest, () => this.process());
       match(Msg.Project.ProjectInstallRequest, () => this.install());
+      match(Msg.Project.ProjectConfigureRequest, () => this.configure());
       match(Msg.Project.ProjectBuildRequest, () => this.build());
       match(Msg.Project.ProjectStartRequest, () => this.start());
       match(Msg.Project.ProjectAnalyseRequest, () => this.analyse());
@@ -120,12 +122,25 @@ export class Project implements Channel {
         }))
       });
 
+      match(Msg.Modules.ModulesConfigureResponse, (resp: any) => {
+        const config = resp.payload.config;
+
+        if (!config) {
+          return;
+        }
+
+        this.setConfig(config);
+      });
+
       match(Msg.VCS.VCSCloneEndNotification, () => {
         setTimeout(() => this.down.next(new Msg.Project.ProjectInstallRequest(this.id, this)), 0);
       });
 
       match(Msg.Modules.ModulesInstallEndNotification, () => {
-        setTimeout(() => this.down.next(new Msg.Project.ProjectBuildRequest(this.id, this)), 0);
+        setTimeout(() => {
+          this.down.next(new Msg.Project.ProjectConfigureRequest(this.id));
+          this.down.next(new Msg.Project.ProjectBuildRequest(this.id, this));
+        }, 0);
       });
     });
   }
@@ -147,6 +162,10 @@ export class Project implements Channel {
 
   install() {
     this.down.next(new Msg.Modules.ModulesInstallRequest(this.id));
+  }
+
+  configure() {
+    this.down.next(new Msg.Modules.ModulesConfigureRequest(this.id));
   }
 
   build() {
@@ -177,10 +196,13 @@ export class Project implements Channel {
     const parsed = gitUrlParse(url);
     this.path = Path.resolve(this.path, parsed.full_name.split("/").join(Path.sep));
     this.url = url;
-    console.log(this);
   }
 
   setName(name: string) {
     this.name = name;
+  }
+
+  setConfig(config: any) {
+    this.config = config;
   }
 }

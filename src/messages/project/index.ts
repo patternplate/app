@@ -13,3 +13,4 @@ export {ProjectDiscardNotification} from "./project-discard-notification";
 export {ProjectSaveRequest} from "./project-save-request";
 export {ProjectSaveResponse} from "./project-save-response";
 export {ProjectSaveNotification} from "./project-save-notification";
+export {ProjectConfigureRequest} from "./project-configure-request";

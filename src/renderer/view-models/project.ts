@@ -65,6 +65,7 @@ export class ProjectViewModel {
   @observable inputUrl: string = "";
   @observable error: Error | null = null;
   @observable state: ProjectViewState = ProjectViewState.Unknown;
+  @observable logo: string = "";
   @observable progress: number = 0;
   @observable highlighted: boolean = false;
   @observable port: number = 0;
@@ -112,6 +113,8 @@ export class ProjectViewModel {
         if (message.installed) {
           this.setState(ProjectViewState.Installed);
 
+          this.model.down.next(new Msg.Modules.ModulesConfigureRequest(this.id));
+
           // If no diff happened assume the current state has a build, too
           if (message.diff.length === 0) {
             this.setState(ProjectViewState.Built);
@@ -158,6 +161,10 @@ export class ProjectViewModel {
       match(Msg.Modules.ModulesInstallErrorNotification, () => {
         this.setState(ProjectViewState.Errored);
       });
+
+      match(Msg.Modules.ModulesConfigureResponse, () => {
+        this.setLogo(this.model.config.logo);
+      })
 
       match(Msg.Modules.ModulesBuildStartNotification, () => {
         this.setState(ProjectViewState.Building);
@@ -292,6 +299,10 @@ export class ProjectViewModel {
     } catch (err) {
       this.inputName = "";
     }
+  }
+
+  @action setLogo(logo: string) {
+    this.logo = logo;
   }
 
   analyse() {
