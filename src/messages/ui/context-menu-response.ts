@@ -1,5 +1,5 @@
 import {Message} from "../message";
-import {ProjectViewModel} from "../../view-models";
+import {ProjectViewModel} from "../../renderer/view-models";
 
 export class ContextMenuResponse extends Message {
   public readonly project: ProjectViewModel;

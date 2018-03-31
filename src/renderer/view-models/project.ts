@@ -1,7 +1,7 @@
 import {action, observable, computed} from "mobx";
 import * as uuid from "uuid";
-import * as Msg from "../messages"
-import {Project} from "../models/project";
+import * as Msg from "../../messages"
+import {Project} from "../../models/project";
 
 const parseGitUrl = require("git-url-parse");
 

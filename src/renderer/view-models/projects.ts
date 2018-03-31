@@ -4,8 +4,8 @@ import { action, observable, computed } from "mobx";
 import { Observable, Subject } from "rxjs";
 import { merge } from 'rxjs/observable/merge';
 
-import * as Msg from "../messages";
-import { Project, ProjectOptions } from "../models/project";
+import * as Msg from "../../messages";
+import { Project, ProjectOptions } from "../../models/project";
 import { ProjectViewModel } from "./project";
 
 const ARSON = require("arson");

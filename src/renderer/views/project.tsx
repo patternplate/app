@@ -1,6 +1,6 @@
 import * as React from "react";
 import {observer} from "mobx-react";
-import * as Msg from "../messages";
+import * as Msg from "../../messages";
 import {ProjectViewModel, ProjectViewState} from "../view-models";
 
 const { keyframes, styled, Text } = require("@patternplate/components");

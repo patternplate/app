@@ -5,7 +5,7 @@ import { Provider } from "mobx-react";
 import * as uuid from "uuid";
 
 import { App } from "./app";
-import * as Msg from "./messages";
+import * as Msg from "../messages";
 import { StartViewModel } from "./view-models/start";
 import { ProjectViewCollection } from "./view-models/projects";
 
@@ -33,7 +33,7 @@ async function main() {
     [data-mount] {
       height: 100%;
     }
-  `
+  `;
 
   const el = document.createElement("div");
   el.setAttribute("data.mount", "data-mount");
@@ -85,6 +85,11 @@ async function main() {
     });
 
     projects.broadcast(new Msg.UI.ContextMenuRequest(tid, el));
+  });
+
+  electron.ipcRenderer.on("menu-request-new", () => {
+    console.log("!");
+    projects.addEmptyProject();
   });
 
   if (process.env.NODE_ENV !== "production") {

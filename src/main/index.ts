@@ -1,4 +1,4 @@
-import { app, BrowserWindow } from "electron"; // tslint:disable-line
+import { app, BrowserWindow, Menu } from "electron";
 import * as Path from "path";
 import * as Url from "url";
 
@@ -6,6 +6,7 @@ require("electron-debug")({ enabled: true });
 const isDevelopment = process.env.NODE_ENV !== 'production'
 
 let mainWindow: Electron.BrowserWindow | null;
+
 
 async function createWindow() {
   try {
@@ -52,14 +53,113 @@ async function createWindow() {
     // when you should delete the corresponding element.
     mainWindow = null;
   });
+}
 
-
+function createMenu() {
+  Menu.setApplicationMenu(Menu.buildFromTemplate([
+    {
+      label: "patternplate",
+      submenu: [
+        ({
+          label: "About patternplate",
+          selector: "orderFrontStandardAboutPanel:"
+        } as any),
+        {
+          label: "Check for updates ...",
+        },
+        {
+          type: "separator"
+        },
+        {
+          label: "Hide",
+          accelerator: "Command+H",
+          click: () => {
+            const win = BrowserWindow.getFocusedWindow();
+            if (win) {
+              win.hide();
+            }
+          }
+        },
+        {
+          type: "separator"
+        },
+        {
+          label: "Quit patternplate",
+          accelerator: "Command+Q",
+          click: () => {
+            app.quit();
+          }
+        }
+      ]
+    },
+    {
+      label: "Library",
+      submenu: [
+        {
+          label: "New library",
+          accelerator: "Command+N",
+          click: () => {
+            const win = BrowserWindow.getFocusedWindow();
+            if (win) {
+              win.webContents.send("menu-request-new");
+            }
+          }
+        },
+        {
+          label: "Open",
+          accelerator: "Command+O",
+          enabled: false
+        }
+      ]
+    },
+    {
+      label: "Edit",
+      submenu: [
+        {
+          label: "Undo",
+          accelerator: "CmdOrCtrl+Z",
+          selector: "undo:"
+        },
+        {
+          label: "Redo",
+          accelerator: "Shift+CmdOrCtrl+Z",
+          selector: "redo:"
+        },
+        {
+          type: "separator"
+        },
+        {
+          label: "Cut",
+          accelerator: "CmdOrCtrl+X",
+          selector: "cut:"
+        },
+        {
+          label: "Copy",
+          accelerator: "CmdOrCtrl+C",
+          selector: "copy:"
+        },
+        {
+          label: "Paste",
+          accelerator: "CmdOrCtrl+V",
+          selector: "paste:"
+        },
+        {
+          label: "Select All",
+          accelerator: "CmdOrCtrl+A",
+          selector: "selectAll:"
+        }
+      ]
+    }
+  ]));
 }
 
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
-app.on("ready", createWindow);
+app.on("ready", () => {
+  createMenu();
+  createWindow();
+});
 
 // Quit when all windows are closed.
 app.on("window-all-closed", () => {
@@ -73,14 +173,15 @@ app.on("window-all-closed", () => {
 app.on("activate", () => {
   // On OS X it's common to re-create a window in the app when the
   // dock icon is clicked and there are no other windows open.
-  if (mainWindow === null) {
+  if (!mainWindow) {
     createWindow();
+  } else {
+    mainWindow.show();
   }
 });
 
 // In this file you can include the rest of your app"s specific main process
 // code. You can also put them in separate files and require them here.
-
 
 if (module.hot) {
   module.hot.accept();

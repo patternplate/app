@@ -5,7 +5,7 @@ import * as uuid from "uuid";
 import { ProjectView } from "./project";
 import { ProjectViewModel } from "../view-models/project";
 import { ProjectViewCollection } from "../view-models/projects";
-import * as Msg from "../messages";
+import * as Msg from "../../messages";
 
 const { styled, Text } = require("@patternplate/components");
 
