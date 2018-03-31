@@ -337,7 +337,7 @@ const ProjectName: React.SFC<ProjectNameProps> = props => {
     <StyledPropertyProjectName
       placeholder="Name"
       readOnly={props.readOnly}
-      full={false}
+      full
       signify={false}
       value={props.value}
       onChange={props.onChange}
@@ -357,7 +357,7 @@ const ProjectUrl: React.SFC<ProjectNameProps> = props => {
       autoFocus
       placeholder="GIT URL"
       readOnly={props.readOnly}
-      signify={true}
+      signify={false}
       onChange={props.onChange}
       value={props.value}
       />
@@ -376,9 +376,8 @@ const StyledPropertyInput = styled.input`
   border-radius: 6px;
   box-sizing: border-box;
   width: ${(props: any) => props.full ? "100%": "auto"};
-  &:not(:last-child) {
-    margin-bottom: 7px;
-  }
+  text-overflow: ellipsis;
+  user-select: ${(props: any) => props.readOnly ? "none" : "auto"};
   &:focus {
     outline: none;
     border: ${(props: any) => props.readOnly ? "1.5px dashed transparent" : "1.5px dashed #999"};
