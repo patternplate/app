@@ -7,7 +7,7 @@ import { ProjectViewModel } from "../view-models/project";
 import { ProjectViewCollection } from "../view-models/projects";
 import * as Msg from "../../messages";
 
-const { styled, Text } = require("@patternplate/components");
+const { Icon, styled, Text } = require("@patternplate/components");
 
 export interface ProjectsProps {
   projects: ProjectViewCollection;
@@ -135,7 +135,7 @@ class WebView extends React.Component<WebViewProps> {
     const {props} = this;
     return (
       <StyledWebviewContainer loaded={props.project.isOpened()}>
-        <StyledWebviewButton onClick={() => props.project.stop()}>Close</StyledWebviewButton>
+        <WebViewButton onClick={() => props.project.stop()} title={`Close ${props.project.name}`}>Close</WebViewButton>
         <StyledWebview innerRef={(ref: any) => this.ref = ref} src={`http://localhost:${props.project.port}`}/>
       </StyledWebviewContainer>
     )
@@ -162,9 +162,50 @@ const StyledWebview = styled("webview")`
   bottom: 0;
 `;
 
+interface WebViewButtonProps {
+  onClick: React.MouseEventHandler<SVGSVGElement>;
+  title: string;
+}
+
+const WebViewButton: React.SFC<WebViewButtonProps> = props => (
+  <StyledWebviewButton onClick={props.onClick} title={props.title}>
+    <StyledWebviewButtonIcon size="l" symbol="arrow-right" onClick={props.onClick}/>
+    <StyledWebviewButtonLabel>Back</StyledWebviewButtonLabel>
+  </StyledWebviewButton>
+);
+
 const StyledWebviewButton = styled.button`
+  display: flex;
+  align-items: center;
   position: fixed;
   z-index: 2;
-  top: 22px;
-  left: 20px;
+  top: 0;
+  left: 0;
+  background: none;
+  color: #fff;
+  text-align: left;
+  padding: 0 10px 0 0;
+  margin: 0;
+  height: 60px;
+  border: 0;
+  cursor: pointer;
+  &:focus {
+    outline: none;
+    color: ${(props: any) => props.theme.active};
+  }
+  &:hover {
+    & > span {
+      opacity: 1;
+    }
+  }
+`;
+
+const StyledWebviewButtonIcon = styled(Icon)`
+  transform: rotate(180deg);
+`;
+
+const StyledWebviewButtonLabel = styled.span`
+  margin-left: -5px;
+  opacity: 0;
+  transition: .3s opacity ease-in-out;
 `;
