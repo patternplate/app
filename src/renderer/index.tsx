@@ -14,6 +14,9 @@ const Store = require("electron-store");
 const { injectGlobal } = require("@patternplate/components");
 
 async function main() {
+  document.addEventListener("dragover", event => event.preventDefault());
+  document.addEventListener("drop", event => event.preventDefault());
+
   const store = new Store();
   const window = electron.remote.getCurrentWindow();
 
