@@ -144,9 +144,11 @@ export class Modules<T extends Installable> {
 
         this.host.up.next(new Msg.Modules.ModulesStartPortNotification(id, port));
 
-        const pp = getExectuable({cwd: this.host.path});
+        const pp = getExectuable({
+          cwd: this.host.path
+        });
 
-        this.cp = ChildProcess.fork(pp, ["start", "--port", `${port}`], {cwd: this.host.path});
+        this.cp = ChildProcess.fork(pp, ["start", "--port", `${port}`, "--cwd", `${this.host.path}`]);
 
         this.cp.on("message", (envelope: any) => {
           const instance = ARSON.parse(envelope);
@@ -161,9 +163,16 @@ export class Modules<T extends Installable> {
           }
         });
 
+        this.cp.on("exit", (code) => {
+          if (code && code !== 0) {
+            this.host.up.next(new Msg.Modules.ModulesStartErrorNotification(id));
+            console.error(`patternplate exited with code ${code}`);
+          }
+        });
+
         this.cp.on("error", (err) => {
           this.host.up.next(new Msg.Modules.ModulesStartErrorNotification(id));
-          console.error(err);
+          console.error(`patternplate start failed: `, err);
         });
       });
   }

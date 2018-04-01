@@ -65,15 +65,15 @@ async function main() {
             label: "Start",
             click: () => project.start()
           },
-          project.isWorking() && {
+          project.isWorking() && project.managed && {
             label: "Abort",
             click: () => {}
           },
           !project.isWorking() && !project.inTransition() && {
-            label: "Remove",
+            label: project.managed ? "Remove" : "Unlist",
             click: () => project.remove()
           },
-          !project.inTransition() && !project.isWorking() && {
+          !project.inTransition() && !project.isWorking() && project.managed && {
             label: "Force sync",
             click: () => project.clone()
           },
@@ -92,6 +92,10 @@ async function main() {
 
   electron.ipcRenderer.on("menu-request-new", () => {
     projects.addEmptyProject();
+  });
+
+  electron.ipcRenderer.on("menu-request-open-from-fs", (_: any, path: string) => {
+    projects.addProjectByPath(path);
   });
 
   if (process.env.NODE_ENV !== "production") {

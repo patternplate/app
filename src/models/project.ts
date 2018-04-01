@@ -17,6 +17,7 @@ export interface ProjectInit {
   path: string;
   url: string;
   previous: { [key: string]: any } | null;
+  managed: boolean;
 }
 
 export interface ProjectInput {
@@ -38,6 +39,7 @@ export class Project implements Channel {
   public readonly vcs: VersionControl;
   public readonly modules: Modules<Project>;
   public readonly previous: any;
+  public readonly managed: boolean;
 
   public readonly up: Subject<any> = new Subject();
   public readonly down: Subject<any> = new Subject();
@@ -45,10 +47,11 @@ export class Project implements Channel {
   static createEmpty(): Project {
     return new Project({
       url: "",
-      path: Path.join(Os.homedir(), "patternplate"),
+      path: Path.join(Os.homedir(), "patternplate", uuid.v4()),
       name: "",
       previous: null,
-      autoStart: true
+      autoStart: true,
+      managed: true
     });
   }
 
@@ -57,12 +60,15 @@ export class Project implements Channel {
   }
 
   static fromInput(input: ProjectInput): Project {
+    const parsed = gitUrlParse(input.url);
+
     return new Project({
       name: input.name,
       url: input.url,
-      path: Path.join(Os.homedir(), "patternplate"),
+      path: Path.join(Os.homedir(), "patternplate", parsed.full_name.split("/").join(Path.sep)),
       previous: null,
-      autoStart: true
+      autoStart: true,
+      managed: true
     });
   }
 
@@ -71,22 +77,34 @@ export class Project implements Channel {
 
     return new Project({
       url,
-      path: Path.join(Os.homedir(), "patternplate"),
+      path: Path.join(Os.homedir(), "patternplate", parsed.full_name.split("/").join(Path.sep)),
       name: parsed.full_name,
       previous: null,
-      autoStart: options ? options.autoStart : false
+      autoStart: options ? options.autoStart : false,
+      managed: true
+    });
+  }
+
+  static fromPath(path: string): Project {
+    return new Project({
+      url: "",
+      path,
+      name: "",
+      previous: null,
+      autoStart: false,
+      managed: false
     });
   }
 
   constructor(init: ProjectInit) {
-    const parsed = gitUrlParse(init.url);
     this.id = init.id || uuid.v4();
     this.url = init.url;
-    this.path = Path.resolve(init.path, parsed.full_name.split("/").join(Path.sep));
+    this.path = init.path;
     this.vcs = new Git(this);
     this.modules = new Modules(this);
     this.previous = init.previous;
     this.name = init.name;
+    this.managed = init.managed;
 
     if (typeof init.autoStart === "boolean") {
       this.autoStart = init.autoStart;
@@ -105,21 +123,23 @@ export class Project implements Channel {
     this.up.subscribe((message: any) => {
       const match = Msg.match(message);
 
+      // TODO: Aggregate ModuleAnalyseResponse here
       match(Msg.VCS.VCSAnalyseResponse, (resp: any) => {
-        // Reinitialize project if missing from disk
-        if (!resp.exists) {
-          return this.process();
-        }
-
-        if (!resp.synced) {
-          this.fetch();
-        }
-
         this.up.next(new Msg.Project.ProjectAnalyseResponse(message.tid, {
-          synced: true,
-          installed: true,
+          synced: resp.synced,
+          installed: resp.synced,
           diff: resp.diff
         }))
+      });
+
+      match(Msg.VCS.VCSReadResponse, (resp: any) => {
+        this.setName(resp.name);
+        this.setUrl(resp.url);
+
+        this.up.next(new Msg.Project.ProjectReadResponse(message.tid, {
+          name: resp.name,
+          url: resp.url
+        }));
       });
 
       match(Msg.Modules.ModulesConfigureResponse, (resp: any) => {
@@ -160,6 +180,10 @@ export class Project implements Channel {
     this.down.next(new Msg.VCS.VCSAnalyseRequest(this.id));
   }
 
+  read() {
+    this.down.next(new Msg.VCS.VCSReadRequest(this.id))
+  }
+
   install() {
     this.down.next(new Msg.Modules.ModulesInstallRequest(this.id));
   }
@@ -189,7 +213,12 @@ export class Project implements Channel {
   }
 
   remove() {
-    this.down.next(new Msg.VCS.VCSRemoveRequest(this.id));
+    if (this.managed) {
+      this.down.next(new Msg.VCS.VCSRemoveRequest(this.id));
+    } else {
+      this.up.next(new Msg.VCS.VCSRemoveEndNotification(this.id));
+      this.up.next(new Msg.VCS.VCSRemoveResponse(this.id, this.id));
+    }
   }
 
   setUrl(url: string) {

@@ -9,6 +9,7 @@ import {Channel} from "./nextable";
 const nodegit = require("nodegit");
 const git = require("nodegit-kit");
 const sander = require("@marionebl/sander");
+const gitUrlParse = require("git-url-parse");
 
 // Ensure bins uses here are available in node_modules
 require("npm/package");
@@ -40,6 +41,7 @@ export class Git<T extends VersionControllable> implements VersionControl {
       const match = Msg.match(message);
 
       match(Msg.VCS.VCSAnalyseRequest, () => this.analyse());
+      match(Msg.VCS.VCSReadRequest, () => this.read(message.tid));
       match(Msg.VCS.VCSCloneRequest, () => this.clone());
       match(Msg.VCS.VCSFetchRequest, () => this.fetch());
       match(Msg.VCS.VCSRemoveRequest, () => this.remove());
@@ -123,6 +125,22 @@ export class Git<T extends VersionControllable> implements VersionControl {
       hash,
       synced,
       diff
+    }));
+  }
+
+  async read(tid: string) {
+    if (!this.host.path || this.host.path === process.cwd()) {
+      return;
+    }
+
+    const repo = await nodegit.Repository.open(this.host.path);
+    const remote = await repo.getRemote("origin");
+    const url = await remote.url();
+    const parsed = gitUrlParse(url);
+
+    this.host.up.next(new VCS.VCSReadResponse(tid, {
+      name: parsed.full_name,
+      url
     }));
   }
 

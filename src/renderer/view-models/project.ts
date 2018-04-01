@@ -83,6 +83,14 @@ export class ProjectViewModel {
     return this.model.url;
   }
 
+  @computed get path() {
+    return this.model.path;
+  }
+
+  @computed get managed() {
+    return this.model.managed;
+  }
+
   @computed get up() {
     return this.model.up;
   }
@@ -107,6 +115,11 @@ export class ProjectViewModel {
       const match = Msg.match(message);
 
       match(Msg.Project.ProjectAnalyseResponse, () => {
+        if (!this.model.managed) {
+          this.setState(ProjectViewState.Built);
+          return;
+        }
+
         if (message.synced) {
           this.setState(ProjectViewState.Fetched);
         }

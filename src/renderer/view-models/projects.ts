@@ -1,12 +1,10 @@
-import * as Os from "os";
-import * as Path from "path";
 import { action, observable, computed } from "mobx";
 import { Observable, Subject } from "rxjs";
 import { merge } from 'rxjs/observable/merge';
 
 import * as Msg from "../../messages";
 import { Project, ProjectOptions } from "../../models/project";
-import { ProjectViewModel } from "./project";
+import { ProjectViewModel, ProjectViewState } from "./project";
 
 const ARSON = require("arson");
 
@@ -39,8 +37,9 @@ export class ProjectViewCollection {
           const project = Project.from({
             url: data.model.url,
             name: data.model.name,
-            path: Path.join(Os.homedir(), "patternplate"),
-            previous: data
+            path: data.model.path,
+            previous: data,
+            managed: data.model.managed
           });
           return new ProjectViewModel(project);
         })
@@ -76,18 +75,54 @@ export class ProjectViewCollection {
   }
 
   @action
-  addEmptyProject(): void {
+  addProjectByPath(path: string): ProjectViewModel | null {
+    const previous = this.items.find(p => p.path === path);
+
+    if (previous) {
+      previous.setHighlighted();
+      return null;
+    }
+
+    const model = Project.fromPath(path);
+    const viewModel = new ProjectViewModel(model);
+
+    this.bind(viewModel);
+    this.listen();
+
+    model.up.subscribe((message: any) => {
+      const match = Msg.match(message);
+
+      match(Msg.Project.ProjectReadResponse, () => {
+        if (message.tid !== model.id) {
+          return;
+        }
+
+        viewModel.setState(ProjectViewState.Built);
+
+        this.items.unshift(viewModel);
+        this.store.set("projects", this.toStore());
+      });
+    });
+
+    model.read();
+    return viewModel;
+  }
+
+  @action
+  addEmptyProject(): ProjectViewModel | null {
     const editable = this.items.find(i => i.editable);
 
     if (editable) {
       editable.setHighlighted();
-      return;
+      return null;
     }
 
     const empty = ProjectViewModel.createEmpty();
     this.items.unshift(empty);
     this.bind(empty);
     this.listen();
+
+    return empty;
   }
 
   @action

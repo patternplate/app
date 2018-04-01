@@ -15,5 +15,7 @@ export {VCSAnalyseResponse} from "./vcs-analyse-response";
 export {VCSFetchRequest} from "./vcs-fetch-request";
 export {VCSFetchStartNotification} from "./vcs-fetch-start-notification";
 export {VCSFetchEndNotification} from "./vcs-fetch-end-notification";
+export {VCSReadRequest} from "./vcs-read-request";
+export {VCSReadResponse} from "./vcs-read-response";
 export {VCSMessage} from "./vcs-message";
 export {Message} from "../message";

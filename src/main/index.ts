@@ -1,4 +1,4 @@
-import { app, screen, BrowserWindow, Menu } from "electron";
+import { app, dialog, screen, BrowserWindow, Menu } from "electron";
 import * as Path from "path";
 import * as Url from "url";
 
@@ -115,7 +115,27 @@ function createMenu() {
         {
           label: "Open",
           accelerator: "Command+O",
-          enabled: false
+          click: () => {
+            const win = BrowserWindow.getFocusedWindow();
+            if (win) {
+              dialog.showOpenDialog({
+                buttonLabel: "Open library",
+                properties: [
+                  "openDirectory"
+                ]
+              }, (selectedPaths: string[]) => {
+                if (!Array.isArray(selectedPaths)) {
+                  return;
+                }
+
+                const [path] = selectedPaths;
+
+                if (path) {
+                  win.webContents.send("menu-request-open-from-fs", path);
+                }
+              });
+            }
+          }
         }
       ]
     },
