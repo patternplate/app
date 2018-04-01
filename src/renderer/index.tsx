@@ -77,6 +77,17 @@ async function main() {
             label: "Force sync",
             click: () => project.clone()
           },
+          {
+            type: "separator"
+          },
+          {
+            label: "Reveal in Finder",
+            click: () => electron.remote.shell.openItem(project.path)
+          },
+          {
+            label: "Copy Path",
+            click: () => electron.clipboard.writeText(project.path)
+          }
         ].filter(Boolean);
 
         const menu = electron.remote.Menu.buildFromTemplate(items as any);
