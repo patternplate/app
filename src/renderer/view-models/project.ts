@@ -323,27 +323,20 @@ export class ProjectViewModel {
   }
 
   clone() {
-    const tid = uuid.v4();
-    setTimeout(() => this.down.next(new Msg.VCS.VCSCloneRequest(tid, this.model)));
+    this.model.process();
   }
 
   start() {
-    const tid = uuid.v4();
-    setTimeout(() => this.down.next(new Msg.Modules.ModulesStartRequest(tid)));
+    this.model.start();
   }
 
   stop() {
-    const tid = uuid.v4();
-    setTimeout(() => this.down.next(new Msg.Modules.ModulesStopRequest(tid)));
+    this.model.stop();
   }
 
-  edit() {
-    throw new Error("Not implemented yet");
-  }
 
   remove() {
-    const tid = uuid.v4();
-    setTimeout(() => this.down.next(new Msg.VCS.VCSRemoveRequest(tid)));
+    this.model.remove();
   }
 
   @action save() {

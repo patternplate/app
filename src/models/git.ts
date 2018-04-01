@@ -1,6 +1,7 @@
 import * as Path from "path";
 import * as uuid from "uuid";
 import * as execa from "execa";
+import * as loadJsonFile from "load-json-file";
 
 import * as Msg from "../messages";
 import {VCS} from "../messages";
@@ -133,15 +134,26 @@ export class Git<T extends VersionControllable> implements VersionControl {
       return;
     }
 
-    const repo = await nodegit.Repository.open(this.host.path);
-    const remote = await repo.getRemote("origin");
-    const url = await remote.url();
-    const parsed = gitUrlParse(url);
+    try {
+      const repo = await nodegit.Repository.open(this.host.path);
+      const remote = await repo.getRemote("origin");
+      const url = await remote.url();
+      const parsed = gitUrlParse(url);
 
-    this.host.up.next(new VCS.VCSReadResponse(tid, {
-      name: parsed.full_name,
-      url
-    }));
+      return this.host.up.next(new VCS.VCSReadResponse(tid, {
+        name: parsed.full_name,
+        url
+      }));
+    } catch (err) {
+      console.log(err);
+    }
+
+    loadJsonFile(Path.join(this.host.path, 'package.json'))
+      .then((pkg: any) => {
+        const name = pkg.name;
+        const url = pkg.repository && pkg.repository.url ? pkg.repository.url : null;
+        return this.host.up.next(new VCS.VCSReadResponse(tid, {name, url}));
+      });
   }
 
   async clone() {
