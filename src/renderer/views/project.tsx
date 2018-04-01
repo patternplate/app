@@ -1,6 +1,8 @@
 import * as React from "react";
 import {observer} from "mobx-react";
 import * as Msg from "../../messages";
+import * as svg from "../util/svg";
+
 import {ProjectViewModel, ProjectViewState} from "../view-models";
 
 const { keyframes, styled, Icon, Text } = require("@patternplate/components");
@@ -159,21 +161,37 @@ interface ProjectIconProps {
   icon: string;
 }
 
-const ProjectIcon = (props: ProjectIconProps) => (
-  <StyledProjectIcon>
-    <StyledIconContainer>
-      {
-        props.icon
-          ? <div dangerouslySetInnerHTML={{__html: props.icon}}/>
-          : <StyledDefaultIcon/>
-      }
-    </StyledIconContainer>
-    <StyledIconText><span>{props.label}</span></StyledIconText>
-    <IconCircumfence loading={props.loading}>
-      <circle cx="50" cy="50" r="49"/>
-    </IconCircumfence>
-  </StyledProjectIcon>
-);
+const ProjectIcon = (props: ProjectIconProps) => {
+  if (!props.icon) {
+    return (
+      <StyledProjectIcon>
+        <StyledIconContainer>
+          <StyledDefaultIcon/>
+        </StyledIconContainer>
+        <StyledIconText><span>{props.label}</span></StyledIconText>
+        <IconCircumfence loading={props.loading}>
+          <circle cx="50" cy="50" r="49"/>
+        </IconCircumfence>
+      </StyledProjectIcon>
+    );
+  }
+
+  const parsed = svg.sanitize(svg.purge([svg.parse(props.icon)]))[0];
+  const viewBox = parsed[1].viewBox.split(" ").map(Number);
+  const bg = svg.detectBackground(parsed, {width: viewBox[2], height: viewBox[3]});
+
+  return (
+    <StyledProjectIcon bg={bg}>
+      <StyledIconContainer>
+        {svg.render(parsed)}
+      </StyledIconContainer>
+      <StyledIconText><span>{props.label}</span></StyledIconText>
+      <IconCircumfence loading={props.loading}>
+        <circle cx="50" cy="50" r="49"/>
+      </IconCircumfence>
+    </StyledProjectIcon>
+  );
+};
 
 const CIRCUM_FENCE = 2 * Math.PI * 50;
 const SPIN = keyframes`
@@ -255,6 +273,7 @@ const StyledProjectIcon = styled.div`
   overflow: hidden;
   font-size: 13px;
   color: #999;
+  background: ${(props: any) => props.bg ? props.bg : 'transparent'}
 `;
 
 const PrimaryProjectActions = styled.div`
