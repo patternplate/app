@@ -178,10 +178,12 @@ export class Project implements Channel {
 
   analyse() {
     this.down.next(new Msg.VCS.VCSAnalyseRequest(this.id));
+    this.down.next(new Msg.Modules.ModulesConfigureRequest(this.id));
   }
 
   read() {
-    this.down.next(new Msg.VCS.VCSReadRequest(this.id))
+    this.down.next(new Msg.VCS.VCSReadRequest(this.id));
+    this.down.next(new Msg.Modules.ModulesConfigureRequest(this.id));
   }
 
   install() {
@@ -222,8 +224,6 @@ export class Project implements Channel {
   }
 
   setUrl(url: string) {
-    const parsed = gitUrlParse(url);
-    this.path = Path.resolve(this.path, parsed.full_name.split("/").join(Path.sep));
     this.url = url;
   }
 
