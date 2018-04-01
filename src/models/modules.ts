@@ -3,7 +3,6 @@ import * as Path from "path";
 import * as ChildProcess from "child_process";
 import * as uuid from "uuid";
 import * as semver from "semver";
-import * as resolveFrom from "resolve-from";
 import * as loadJsonFile from "load-json-file";
 
 import {Channel} from "./nextable";
@@ -12,6 +11,7 @@ import * as Msg from "../messages";
 const ARSON = require("arson");
 const readPkg = require("read-pkg");
 const loadConfig = require("@patternplate/load-config");
+const resolveFrom = require("resolve-from");
 
 const PREFIX = require("find-up").sync("node_modules", {cwd: __dirname});
 
@@ -148,7 +148,11 @@ export class Modules<T extends Installable> {
           cwd: this.host.path
         });
 
-        this.cp = ChildProcess.fork(pp, ["start", "--port", `${port}`, "--cwd", `${this.host.path}`]);
+        this.cp = ChildProcess.fork(pp, [
+          "start", "--port", `${port}`, "--cwd", `${this.host.path}`
+        ], {
+          stdio: ["pipe", "pipe", "pipe", "ipc"]
+        });
 
         this.cp.on("message", (envelope: any) => {
           const instance = ARSON.parse(envelope);
@@ -163,10 +167,21 @@ export class Modules<T extends Installable> {
           }
         });
 
+        const stderr: any[] = [];
+
+        this.cp.stdout.on("data", (data: any) => {
+          console.log(String(data));
+        });
+
+        this.cp.stderr.on("data", (data: any) => {
+          console.log(String(data));
+          stderr.push(String(data));
+        });
+
         this.cp.on("exit", (code) => {
           if (code && code !== 0) {
             this.host.up.next(new Msg.Modules.ModulesStartErrorNotification(id));
-            console.error(`patternplate exited with code ${code}`);
+            console.error(`patternplate exited with code ${code}:\n${stderr.join("\n")}`);
           }
         });
 
@@ -215,7 +230,7 @@ interface ExecOpts {
 }
 
 function getExectuable({cwd}: ExecOpts): string {
-  const resolved = resolveFrom(cwd, "@patternplate/cli/package");
+  const resolved = resolveFrom.silent(cwd, "@patternplate/cli/package");
 
   if (!resolved) {
     return PATTERNPLATE;
@@ -229,7 +244,7 @@ function getExectuable({cwd}: ExecOpts): string {
 
   const {version = ''} = pkg;
 
-  if (semver.lt(version, "2.0.0-93")) {
+  if (semver.lt(version, "2.0.4")) {
     return PATTERNPLATE;
   }
 
