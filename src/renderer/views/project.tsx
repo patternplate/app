@@ -84,6 +84,9 @@ export class ProjectView extends React.Component<ProjectViewProps> {
                 readOnly={props.project.editable !== true}
                 value={props.project.inputUrl || props.project.url || ""}
               />
+              {props.project.editable &&
+                <button type="submit" style={{display: "none"}}/>
+              }
             </ProjectProperties>
             <MoreButton onClick={(e) => {
               const tid = uuid.v4();
