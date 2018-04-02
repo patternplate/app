@@ -16,3 +16,4 @@ export {ProjectSaveNotification} from "./project-save-notification";
 export {ProjectConfigureRequest} from "./project-configure-request";
 export {ProjectReadRequest} from "./project-read-request";
 export {ProjectReadResponse} from "./project-read-response";
+export {ProjectOpenRequest} from "./project-open-request";

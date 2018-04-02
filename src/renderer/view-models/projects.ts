@@ -19,13 +19,14 @@ export class ProjectViewCollection {
   public down: Observable<any> = new Subject();
 
   @observable public items: ProjectViewModel[];
+  @observable public activeProject: string | null = null;
 
   @computed get length(): number {
     return this.items.length;
   }
 
-  @computed get startedProject() {
-    return this.items.find(item => item.isStarted());
+  @computed get startedProjects(): ProjectViewModel[] {
+    return this.items.filter(i => i.isStarted());
   }
 
   static fromStore(store: any) {
@@ -132,6 +133,11 @@ export class ProjectViewCollection {
     this.store.set("projects", this.toStore());
   }
 
+  @action
+  setActiveProject(id: string | null): void {
+    this.activeProject = id;
+  }
+
   bind(item: ProjectViewModel) {
     this.up = merge(this.up, item.up);
     this.down = merge(this.down, item.down);
@@ -163,6 +169,10 @@ export class ProjectViewCollection {
 
       match(Msg.Project.ProjectSaveNotification, () => {
         this.store.set("projects", this.toStore());
+      });
+
+      match(Msg.Project.ProjectOpenRequest, () => {
+        this.setActiveProject(message.id);
       });
 
       match(Msg.Project.ProjectDiscardNotification, () => {

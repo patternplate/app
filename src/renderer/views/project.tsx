@@ -10,6 +10,7 @@ const { Animated } = require("react-web-animation");
 
 export interface ProjectViewProps {
   project: ProjectViewModel;
+  onDoubleClick: React.MouseEventHandler<HTMLElement>;
 }
 
 @observer
@@ -62,6 +63,7 @@ export class ProjectView extends React.Component<ProjectViewProps> {
           playState={props.project.highlighted ? "running" : "idle"}
           timing={{ duration: 300, iterations: 2 }}
           keyframes={WIGGLE}
+          onDoubleClick={props.onDoubleClick}
         >
           <ProjectIcon
             icon={props.project.logo}
@@ -90,25 +92,6 @@ export class ProjectView extends React.Component<ProjectViewProps> {
               </ProjectAction>
             </ProjectActions>
           )}
-          {props.project.isWorking() && (
-            <ProjectActions>
-              <ProjectAction actionType="negative" type="reset">
-                <Text>Abort</Text>
-              </ProjectAction>
-            </ProjectActions>
-          )}
-          {props.project.isReady() &&
-            !props.project.editable && (
-              <PrimaryProjectActions>
-                <PrimaryProjectAction
-                  actionType="affirmative"
-                  order="primary"
-                  type="submit"
-                >
-                  <Text>Start</Text>
-                </PrimaryProjectAction>
-              </PrimaryProjectActions>
-            )}
         </ProjectTile>
       </form>
     );
@@ -140,9 +123,6 @@ const getPhase = (state: ProjectViewState): string => {
         return "Installing";
       case ProjectViewState.Building:
         return "Building";
-      case ProjectViewState.Starting:
-      case ProjectViewState.Opening:
-        return "Starting";
       case ProjectViewState.Removing:
         return "Removing";
       default:
@@ -274,38 +254,6 @@ const StyledProjectIcon = styled.div`
   font-size: 13px;
   color: #999;
   background: ${(props: any) => props.bg ? props.bg : 'transparent'}
-`;
-
-const PrimaryProjectActions = styled.div`
-  display: flex;
-  align-items: center;
-  position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  padding: 20px 0 20px 45px;
-  margin-right: 10px;
-  background-image: linear-gradient(
-    to right,
-    rgba(255, 255, 255, 0),
-    rgba(255, 255, 255, 1) 20%
-  );
-`;
-
-const PrimaryProjectAction = styled.button`
-  padding: 3px 7px;
-  background: ${(props: any) => props.actionType === "negative" ? props.theme.error : props.theme.active};
-  border: none;
-  border-radius: 2px;
-  text-align: left;
-  cursor: pointer;
-  color: #fff;
-  &:not(:last-child) {
-    margin-right: 10px;
-  }
-  &:focus {
-    outline: none;
-  }
 `;
 
 const ProjectAction = styled.button`

@@ -243,8 +243,15 @@ export class ProjectViewModel {
     return this.gte(ProjectViewState.Built);
   }
 
+  isStarting(): boolean {
+    return this.gte(ProjectViewState.Starting);
+  }
+
   isStarted(): boolean {
-    return this.gte(ProjectViewState.Started) && this.lt(ProjectViewState.Stopped);
+    return this.state === ProjectViewState.Starting ||
+      this.state === ProjectViewState.Started ||
+      this.state === ProjectViewState.Opening ||
+      this.state === ProjectViewState.Opened;
   }
 
   isOpened(): boolean {
@@ -326,14 +333,17 @@ export class ProjectViewModel {
     this.model.process();
   }
 
-  start() {
-    this.model.start();
+  start(opts?: {open: boolean}) {
+    this.model.start(opts);
+  }
+
+  open() {
+    this.model.open();
   }
 
   stop() {
     this.model.stop();
   }
-
 
   remove() {
     this.model.remove();

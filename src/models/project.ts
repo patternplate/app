@@ -152,6 +152,12 @@ export class Project implements Channel {
         this.setConfig(config);
       });
 
+      match(Msg.Modules.ModulesStartStartedNotification, () => {
+        if (message.open) {
+          this.up.next(new Msg.Project.ProjectOpenRequest(message.tid, this.id));
+        }
+      });
+
       match(Msg.VCS.VCSCloneEndNotification, () => {
         setTimeout(() => this.down.next(new Msg.Project.ProjectInstallRequest(this.id, this)), 0);
       });
@@ -198,8 +204,8 @@ export class Project implements Channel {
     this.down.next(new Msg.Modules.ModulesBuildRequest(this.id));
   }
 
-  start() {
-    this.down.next(new Msg.Modules.ModulesStartRequest(this.id));
+  start(opts?: {open: boolean}) {
+    this.down.next(new Msg.Modules.ModulesStartRequest(this.id, opts));
   }
 
   stop() {
@@ -207,7 +213,7 @@ export class Project implements Channel {
   }
 
   open() {
-    this.up.next(new Msg.Project.ProjectOpenNotification(this.id, this.id));
+    this.up.next(new Msg.Project.ProjectOpenRequest(this.id, this.id));
   }
 
   close() {

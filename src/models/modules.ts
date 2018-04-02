@@ -43,7 +43,7 @@ export class Modules<T extends Installable> {
       match(Msg.Modules.ModulesInstallRequest, () => this.install());
       match(Msg.Modules.ModulesBuildRequest, () => this.build());
       match(Msg.Modules.ModulesConfigureRequest, () => this.configure());
-      match(Msg.Modules.ModulesStartRequest, () => this.start());
+      match(Msg.Modules.ModulesStartRequest, () => this.start(message));
       match(Msg.Modules.ModulesStopRequest, () => this.stop());
     });
   }
@@ -129,7 +129,7 @@ export class Modules<T extends Installable> {
     });
   }
 
-  private start() {
+  private start(request: Msg.Modules.ModulesStartRequest) {
     const id = uuid.v4();
     this.host.up.next(new Msg.Modules.ModulesStartStartNotification(id));
 
@@ -163,9 +163,10 @@ export class Modules<T extends Installable> {
             const port = instance.payload.port as number;
             const cwd = instance.payload.cwd as string;
 
-            this.host.up.next(new Msg.Modules.ModulesStartStartedNotification(id, {
+            this.host.up.next(new Msg.Modules.ModulesStartStartedNotification(id, this.host.id, {
               port,
-              cwd
+              cwd,
+              open: request.open
             }));
           }
         });

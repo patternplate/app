@@ -6,8 +6,7 @@ import * as uuid from "uuid";
 
 import { App } from "./app";
 import * as Msg from "../messages";
-import { StartViewModel } from "./view-models/start";
-import { ProjectViewCollection } from "./view-models/projects";
+import { ProjectViewModel, StartViewModel, ProjectViewCollection } from "./view-models";
 
 const electron = require("electron");
 const Store = require("electron-store");
@@ -58,16 +57,27 @@ async function main() {
           return;
         }
 
-        const {project} = message;
+        const project: ProjectViewModel = message.project;
 
         const items = [
-          project.isReady() && {
+          project.isReady() && !project.isStarted() && {
             label: "Start",
-            click: () => project.start()
+            click: () => project.start({open: false})
+          },
+          project.isStarted() && {
+            label: "Open",
+            click: () => project.open()
+          },
+          project.isStarted() && {
+            label: "Stop",
+            click: () => project.stop()
           },
           project.isWorking() && project.managed && {
             label: "Abort",
             click: () => {}
+          },
+          {
+            type: "separator"
           },
           !project.isWorking() && !project.inTransition() && {
             label: project.managed ? "Remove" : "Unlist",
@@ -129,7 +139,7 @@ async function main() {
       const NextApp = require("./app").App;
       ReactDOM.render(
         <Provider start={start} projects={projects}>
-         <NextApp/>
+          <NextApp/>
         </Provider>
       , el)
     });

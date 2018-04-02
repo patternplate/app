@@ -1,4 +1,4 @@
-import { app, dialog, screen, BrowserWindow, Menu } from "electron";
+import { app, dialog, screen, BrowserWindow, Menu, ipcMain } from "electron";
 import * as Path from "path";
 import * as Url from "url";
 
@@ -115,27 +115,7 @@ function createMenu() {
         {
           label: "Open",
           accelerator: "Command+O",
-          click: () => {
-            const win = BrowserWindow.getFocusedWindow();
-            if (win) {
-              dialog.showOpenDialog({
-                buttonLabel: "Open library",
-                properties: [
-                  "openDirectory"
-                ]
-              }, (selectedPaths: string[]) => {
-                if (!Array.isArray(selectedPaths)) {
-                  return;
-                }
-
-                const [path] = selectedPaths;
-
-                if (path) {
-                  win.webContents.send("menu-request-open-from-fs", path);
-                }
-              });
-            }
-          }
+          click: () => openFromFs()
         }
       ]
     },
@@ -180,12 +160,37 @@ function createMenu() {
   ]));
 }
 
+const openFromFs = () => {
+  const win = BrowserWindow.getFocusedWindow();
+  if (win) {
+    dialog.showOpenDialog({
+      title: "Open from Disk",
+      buttonLabel: "Open Library",
+      properties: [
+        "openDirectory"
+      ]
+    }, (selectedPaths: string[]) => {
+      if (!Array.isArray(selectedPaths)) {
+        return;
+      }
+
+      const [path] = selectedPaths;
+
+      if (path) {
+        win.webContents.send("menu-request-open-from-fs", path);
+      }
+    });
+  }
+}
+
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.on("ready", () => {
   createMenu();
   createWindow();
+
+  ipcMain.on("open-from-fs", () => openFromFs());
 });
 
 // Quit when all windows are closed.

@@ -1,7 +1,9 @@
 import * as React from "react";
 import { observer } from "mobx-react";
+import { ProjectsToolbar } from "./projects-toolbar";
 
 const { styled, Text } = require("@patternplate/components");
+const { Tower } = require("./tower");
 
 interface Greeting {
   location: string;
@@ -42,6 +44,8 @@ export interface StartProps {
   onSubmit: React.FormEventHandler<HTMLFormElement>;
   onChange: React.FormEventHandler<HTMLInputElement>;
   onLinkClick: React.MouseEventHandler<HTMLAnchorElement>;
+  onNewClick: React.MouseEventHandler<HTMLElement>;
+  onAddClick: React.MouseEventHandler<HTMLElement>;
 }
 
 @observer
@@ -64,36 +68,41 @@ export class StartView extends React.Component<StartProps> {
     const {greeting} = this.state;
 
     return (
-      <form onSubmit={props.onSubmit}>
-        <Greeting>
-          <Headline order={0}>{greeting.utterance}
-            <Tooltip data-title={`That's "Hi!" in ${greeting.location}`}>*</Tooltip>
-          </Headline>
-          <Description>
-            Paste a patternplate URL to start.<br/>
-            No idea what to paste? Try this one:<br/>
-            <Link
-              title="Add Alva Designkit"
-              onClick={props.onLinkClick}
-              href="https://github.com/meetalva/designkit.git"
-              >
-              github.com/meetalva/designkit.git
-            </Link>
-          </Description>
-        </Greeting>
-        <StyledInputBar>
-          <StyledInput
-            placeholder="Feed me with GIT (or click the link above)"
-            onChange={props.onChange}
-            value={props.value}
-            />
-          {props.valid &&
-            <StyledInputButton>
-              <Text size="m">Add</Text>
-            </StyledInputButton>
-          }
-        </StyledInputBar>
-      </form>
+      <React.Fragment>
+        <ProjectsToolbar onAddClick={props.onAddClick} onNewClick={props.onNewClick}/>
+        <form onSubmit={props.onSubmit}>
+          <Tower>
+            <Greeting>
+              <Headline order={0}>{greeting.utterance}
+                <Tooltip data-title={`That's "Hi!" in ${greeting.location}`}>*</Tooltip>
+              </Headline>
+              <Description>
+                Paste a patternplate URL to start.<br/>
+                No idea what to paste? Try this one:<br/>
+                <Link
+                  title="Add Alva Designkit"
+                  onClick={props.onLinkClick}
+                  href="https://github.com/meetalva/designkit.git"
+                  >
+                  github.com/meetalva/designkit.git
+                </Link>
+              </Description>
+            </Greeting>
+            <StyledInputBar>
+              <StyledInput
+                placeholder="Feed me with GIT (or click the link above)"
+                onChange={props.onChange}
+                value={props.value}
+                />
+              {props.valid &&
+                <StyledInputButton>
+                  <Text size="m">Add</Text>
+                </StyledInputButton>
+              }
+            </StyledInputBar>
+          </Tower>
+        </form>
+      </React.Fragment>
     );
   }
 }
@@ -103,6 +112,7 @@ const Tooltip = styled.sup`
 `;
 
 const Greeting = styled.div`
+  margin-top: 40px;
   margin-bottom: 45px;
 `;
 
