@@ -30,6 +30,7 @@ interface InjectedAppProps {
 export class App extends React.Component {
   render() {
     const props = this.props as InjectedAppProps;
+    const hasActiveProject = props.projects.startedProjects.some(p => p.id === props.projects.activeProject);
 
     return (
       <ThemeProvider theme={themes().dark}>
@@ -37,7 +38,7 @@ export class App extends React.Component {
           <Chrome>
             <StyledChromeTab
               title="View Library List"
-              active={!props.projects.activeProject}
+              active={!hasActiveProject}
               onClick={() => props.projects.setActiveProject(null)}
             >
               <Icon size="m" symbol="patternplate" />
@@ -50,6 +51,18 @@ export class App extends React.Component {
                 onClick={() => props.projects.setActiveProject(project.id)}
               >
                 <StyledChromeLabel>{project.name}</StyledChromeLabel>
+                  <StyledCloseIcon
+                    title={`Close Library ${project.name}`}
+                    onClick={(e: React.MouseEvent<HTMLAnchorElement>) => {
+                    e.stopPropagation();
+                    project.stop();
+                    }}
+                    >
+                    <svg viewBox="0 0 30 30">
+                      <path d="M15 7h1v16h-1V7z"/>
+                      <path d="M23 15v1H7v-1h16z"/>
+                    </svg>
+                </StyledCloseIcon>
               </StyledChromeTab>
             ))}
           </Chrome>
@@ -118,6 +131,19 @@ const Chrome = (props: ChromeProps) => {
     </StyledChrome>
   );
 };
+
+const StyledCloseIcon = styled.a`
+  flex: 0 0 20px;
+  transform: rotate(45deg);
+  width: 20px;
+  height: 20px;
+  fill: currentColor;
+  border-radius: 50%;
+  &:hover {
+    background: #0F0F32;
+  }
+  margin-left: 5px;
+`;
 
 const StyledChrome = styled.header`
   box-sizing: border-box;
