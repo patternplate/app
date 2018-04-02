@@ -7,8 +7,8 @@ import * as Msg from "../messages";
 import {VCS} from "../messages";
 import {Channel} from "./nextable";
 
-const nodegit = require("nodegit");
-const git = require("nodegit-kit");
+declare var __static: string;
+
 const sander = require("@marionebl/sander");
 const gitUrlParse = require("git-url-parse");
 
@@ -31,6 +31,8 @@ export interface VersionControllable extends Channel {
 
 const PREFIX = require("find-up").sync("node_modules", {cwd: __dirname});
 const RIMRAF = Path.join(PREFIX, ".bin", "rimraf");
+const GIT = Path.join((__static), "git", "macos", "bin", "git");
+const GIT_EXEC_PATH = Path.dirname(GIT);
 
 export class Git<T extends VersionControllable> implements VersionControl {
   readonly host: T;
@@ -65,50 +67,40 @@ export class Git<T extends VersionControllable> implements VersionControl {
       }));
     }
 
-    const open = async () => {
-      try {
-        return await nodegit.Repository.open(this.host.path);
-      } catch (err) {
-        return null;
-      }
-    }
+    const result = await execa(GIT, ["rev-parse", "HEAD"], {cwd: this.host.path})
+      .catch(() => {
+        this.host.up.next(new VCS.VCSAnalyseResponse(this.host.id, {
+          exists: false,
+          hash: null,
+          synced: null,
+          diff: []
+        }));
+      });
 
-    const repo = await open();
-
-    if (!repo) {
-      return this.host.up.next(new VCS.VCSAnalyseResponse(this.host.id, {
-        exists: false,
-        hash: null,
-        synced: null,
-        diff: []
-      }));
-    }
-
-    const head = await repo.getHeadCommit();
-
-    if (!head) {
-      return this.host.up.next(new VCS.VCSAnalyseResponse(this.host.id, {
-        exists,
-        hash: null,
-        synced: null,
-        diff: []
-      }));
-    }
-
-    const hash = await head.sha();
+    const hash = result ? result.stdout : null;
 
     if (!hash) {
       return this.host.up.next(new VCS.VCSAnalyseResponse(this.host.id, {
         exists,
-        hash,
+        hash: null,
         synced: null,
         diff: []
       }));
     }
 
-    const remoteCommit = await repo.getReferenceCommit("origin/master");
+    const diffResult = await execa(GIT, ["log", "master..origin/master", "--oneline", "--format=format:%H"], {
+      cwd: this.host.path
+    })
+      .catch(() => {
+        return this.host.up.next(new VCS.VCSAnalyseResponse(this.host.id, {
+          exists,
+          hash,
+          synced: null,
+          diff: []
+        }));
+      });
 
-    if (!remoteCommit) {
+    if (!diffResult) {
       return this.host.up.next(new VCS.VCSAnalyseResponse(this.host.id, {
         exists,
         hash,
@@ -117,14 +109,12 @@ export class Git<T extends VersionControllable> implements VersionControl {
       }));
     }
 
-    const remoteHash = await remoteCommit.sha();
-    const synced = remoteHash === hash;
-    const diff = await git.diff(repo, remoteHash, hash);
+    const diff = diffResult.stdout.split("\n").filter(Boolean);
 
-    return this.host.up.next(new VCS.VCSAnalyseResponse(this.host.id, {
+    this.host.up.next(new VCS.VCSAnalyseResponse(this.host.id, {
       exists,
       hash,
-      synced,
+      synced: diff.length === 0,
       diff
     }));
   }
@@ -134,18 +124,21 @@ export class Git<T extends VersionControllable> implements VersionControl {
       return;
     }
 
-    try {
-      const repo = await nodegit.Repository.open(this.host.path);
-      const remote = await repo.getRemote("origin");
-      const url = await remote.url();
+    const urlResult = await execa(GIT, ["config", "--get", "remote.origin.url"], {
+      cwd: this.host.path
+    })
+      .catch(err => {
+        console.error(err);
+      });
+
+    if (urlResult) {
+      const url = urlResult.stdout;
       const parsed = gitUrlParse(url);
 
       return this.host.up.next(new VCS.VCSReadResponse(tid, {
         name: parsed.full_name,
         url
       }));
-    } catch (err) {
-      console.log(err);
     }
 
     loadJsonFile(Path.join(this.host.path, 'package.json'))
@@ -159,7 +152,6 @@ export class Git<T extends VersionControllable> implements VersionControl {
   async clone() {
     const host = this.host;
     const tid = uuid.v4();
-    let retries = 0;
 
     if (!this.host.path || this.host.path === process.cwd()) {
       return;
@@ -178,44 +170,24 @@ export class Git<T extends VersionControllable> implements VersionControl {
       await sander.rimraf(host.path);
     }
 
-    nodegit.Clone(this.host.url, host.path, {
-      fetchOpts: {
-        callbacks: {
-          transferProgress(p: any) {
-            return host.up.next(new VCS.VCSProgressNotification(tid, p));
-          },
-          credentials(_: any, username: string) {
-            try {
-              retries++
-
-              if (retries >= 10) {
-                return host.up.next(new VCS.VCSErrorNotification(tid, new Error(`Could not connect to ssh-agent`)));
-              } else if (retries >= 1) {
-                return host.up.next(new VCS.VCSRetryNotification(tid, retries));
-              }
-
-              return nodegit.Cred.sshKeyFromAgent(username);
-            } catch (err) {
-              host.up.next(new VCS.VCSErrorNotification(tid, err))
-            }
-          }
+    try {
+      await execa(GIT, ["clone", this.host.url, this.host.path], {
+        stdio: "inherit",
+        env: {
+          GIT_EXEC_PATH
         }
-      }
-    })
-    .then(() => {
+      });
       host.up.next(new VCS.VCSCloneEndNotification(tid, {
         url: host.url,
         path: host.path
       }));
-    })
-    .catch((err: Error) => {
+    } catch (err) {
       host.up.next(new VCS.VCSErrorNotification(tid, err));
-    })
+    }
   }
 
   async fetch() {
     const tid = uuid.v4();
-    let retries = 0;
 
     this.host.up.next(new VCS.VCSFetchStartNotification(tid, {
       url: this.host.url,
@@ -223,43 +195,17 @@ export class Git<T extends VersionControllable> implements VersionControl {
     }));
 
     try {
-      const repo = await nodegit.Repository.open(this.host.path);
-      const before = await repo.getHeadCommit();
-      const after = await repo.getReferenceCommit("origin/master");
-      const diff = await git.diff(repo, before, after);
-
-      const host = this.host;
-
-      await repo.fetch("origin", {
-        callbacks: {
-          transferProgress(p: any): void {
-            return host.up.next(new VCS.VCSProgressNotification(tid, p));
-          },
-          credentials(_: any, username: string) {
-            try {
-              retries++
-
-              if (retries >= 10) {
-                host.up.next(new VCS.VCSErrorNotification(tid, new Error(`Could not connect to ssh-agent`)));
-                return;
-              } else if (retries >= 1) {
-                host.up.next(new VCS.VCSRetryNotification(tid, retries));
-              }
-
-              return nodegit.Cred.sshKeyFromAgent(username);
-            } catch (err) {
-              host.up.next(new VCS.VCSErrorNotification(tid, err))
-            }
-          }
+      await execa(GIT, ["pull", "origin/master"], {
+        stdio: "inherit",
+        env: {
+          GIT_EXEC_PATH
         }
       });
-
-      await repo.mergeBranches("master", "origin/master");
 
       this.host.up.next(new VCS.VCSFetchEndNotification(tid, {
         url: this.host.url,
         path: this.host.path,
-        diff
+        diff: []
       }));
     } catch (err) {
       this.host.up.next(new VCS.VCSErrorNotification(tid, err));

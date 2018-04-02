@@ -4,5 +4,6 @@ productName: patternplate
 npmRebuild: false
 extraResources:
   - node_modules
+  - bin
 directories:
   output: "app"

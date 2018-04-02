@@ -69,13 +69,16 @@ export class Modules<T extends Installable> {
       console.log(String(data));
     });
 
-    cp.on("exit", (code) => {
+    const onEnd = (code: number) => {
       if (code !== 0) {
         return this.host.up.next(new Msg.Modules.ModulesInstallErrorNotification(id));
       }
 
       this.host.up.next(new Msg.Modules.ModulesInstallEndNotification(id));
-    });
+    }
+
+    cp.once("close", onEnd);
+    cp.once("exit", onEnd);
   }
 
   private configure() {
