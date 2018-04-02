@@ -1,6 +1,5 @@
 import { action, observable, computed } from "mobx";
 import { Observable, Subject } from "rxjs";
-import { merge } from 'rxjs/observable/merge';
 
 import * as Msg from "../../messages";
 import { Project, ProjectOptions } from "../../models/project";
@@ -15,6 +14,7 @@ export interface ProjectViewCollectionInit {
 
 export class ProjectViewCollection {
   private store: any;
+
   public up: Observable<any> = new Subject();
   public down: Observable<any> = new Subject();
 
@@ -69,7 +69,6 @@ export class ProjectViewCollection {
     const viewModel = new ProjectViewModel(model);
     this.items.push(viewModel);
     this.bind(viewModel);
-    this.listen();
 
     this.store.set("projects", this.toStore());
     return viewModel;
@@ -88,7 +87,6 @@ export class ProjectViewCollection {
     const viewModel = new ProjectViewModel(model);
 
     this.bind(viewModel);
-    this.listen();
 
     model.up.subscribe((message: any) => {
       const match = Msg.match(message);
