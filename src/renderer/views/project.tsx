@@ -194,7 +194,6 @@ const ProjectIcon = (props: ProjectIconProps) => {
         <StyledIconContainer>
           <StyledDefaultIcon/>
         </StyledIconContainer>
-        <StyledIconText><span>{props.label}</span></StyledIconText>
         <IconCircumfence loading={props.loading}>
           <circle cx="50" cy="50" r="49"/>
         </IconCircumfence>
@@ -211,7 +210,6 @@ const ProjectIcon = (props: ProjectIconProps) => {
       <StyledIconContainer>
         {svg.render(parsed)}
       </StyledIconContainer>
-      <StyledIconText><span>{props.label}</span></StyledIconText>
       <IconCircumfence loading={props.loading}>
         <circle cx="50" cy="50" r="49"/>
       </IconCircumfence>
@@ -244,29 +242,6 @@ const StyledIconContainer = styled.div`
 const StyledDefaultIcon = styled(Icon).attrs({ symbol: "patternplate" })`
   width: 30px;
   height: 30px;
-`;
-
-const StyledIconText = styled(Text)`
-  position: relative;
-
-  > span {
-    position: relative;
-    z-index: 2;
-  }
-
-  &::before {
-    content: '';
-    position: absolute;
-    z-index: 1;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    left: 0;
-    background: rgba(255, 255, 255, 1);
-    transform: scale(1.5);
-    transform-origin: center;
-    filter: blur(3px);
-  }
 `;
 
 const IconCircumfence = styled.svg.attrs({ viewBox: "0 0 100 100" })`
