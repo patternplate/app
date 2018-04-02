@@ -1,18 +1,16 @@
 import * as React from "react";
 
+import * as Msg from "../messages";
 import { StartView } from "./views/start";
 import { ProjectsView } from "./views/projects";
 import { WebView } from "./views/webview";
+import { ProjectTab } from "./views/project-tab";
 
-import {
-  ProjectViewCollection,
-  StartViewModel
-} from "./view-models";
+import { ProjectViewCollection, StartViewModel } from "./view-models";
 
 const { observer, inject } = require("mobx-react");
 const {
   Icon,
-  Text,
   ThemeProvider,
   themes,
   styled
@@ -30,7 +28,9 @@ interface InjectedAppProps {
 export class App extends React.Component {
   render() {
     const props = this.props as InjectedAppProps;
-    const hasActiveProject = props.projects.startedProjects.some(p => p.id === props.projects.activeProject);
+    const hasActiveProject = props.projects.startedProjects.some(
+      p => p.id === props.projects.activeProject
+    );
 
     return (
       <ThemeProvider theme={themes().dark}>
@@ -44,26 +44,16 @@ export class App extends React.Component {
               <Icon size="m" symbol="patternplate" />
             </StyledChromeTab>
             {props.projects.startedProjects.map(project => (
-              <StyledChromeTab
+              <ProjectTab
                 active={props.projects.activeProject === project.id}
-                title={`View Library ${project.name}`}
-                key={project.id}
+                project={project}
                 onClick={() => props.projects.setActiveProject(project.id)}
-              >
-                <StyledChromeLabel>{project.name}</StyledChromeLabel>
-                  <StyledCloseIcon
-                    title={`Close Library ${project.name}`}
-                    onClick={(e: React.MouseEvent<HTMLAnchorElement>) => {
-                    e.stopPropagation();
-                    project.stop();
-                    }}
-                    >
-                    <svg viewBox="0 0 30 30">
-                      <path d="M15 7h1v16h-1V7z"/>
-                      <path d="M23 15v1H7v-1h16z"/>
-                    </svg>
-                </StyledCloseIcon>
-              </StyledChromeTab>
+                onContextMenuRequest={message => {
+                  project.up.next(
+                    new Msg.UI.ContextMenuResponse(message.tid, project)
+                  );
+                }}
+              />
             ))}
           </Chrome>
           {props.projects.length === 0 && (
@@ -102,17 +92,14 @@ export class App extends React.Component {
               onAddClick={() => electron.ipcRenderer.send("open-from-fs")}
             />
           )}
-          {
-            props.projects.startedProjects
-              .map(project => (
-                <WebView
-                  key={project.id}
-                  port={project.port}
-                  project={project}
-                  active={project.id === props.projects.activeProject}
-                  />
-              ))
-          }
+          {props.projects.startedProjects.map(project => (
+            <WebView
+              key={project.id}
+              port={project.port}
+              project={project}
+              active={project.id === props.projects.activeProject}
+            />
+          ))}
         </React.Fragment>
       </ThemeProvider>
     );
@@ -131,19 +118,6 @@ const Chrome = (props: ChromeProps) => {
     </StyledChrome>
   );
 };
-
-const StyledCloseIcon = styled.a`
-  flex: 0 0 20px;
-  transform: rotate(45deg);
-  width: 20px;
-  height: 20px;
-  fill: currentColor;
-  border-radius: 50%;
-  &:hover {
-    background: #0F0F32;
-  }
-  margin-left: 5px;
-`;
 
 const StyledChrome = styled.header`
   box-sizing: border-box;
@@ -178,11 +152,6 @@ const StyledChromeTab = styled.a`
   :hover {
     color: ${(props: any) => props.theme.color};
   }
-`;
-
-const StyledChromeLabel = styled(Text)`
-  overflow: hidden;
-  text-overflow: ellipsis;
 `;
 
 const StyledTrafficLightSpacer = styled.div`
