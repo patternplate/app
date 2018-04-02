@@ -25,7 +25,7 @@ export const ProjectsToolbar = observer((props: ProjectsToolbarProps) => (
 const StyledProjectsToolbar = styled.nav`
   position: fixed;
   z-index: 1;
-  top: 40;
+  top: 40px;
   display: flex;
   width: 100%;
   height: 40px;

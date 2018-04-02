@@ -88,6 +88,11 @@ export class App extends React.Component {
           {props.projects.length > 0 && (
             <ProjectsView
               projects={props.projects}
+              onEscape={() => {
+                props.projects.items
+                  .filter(p => p.editable)
+                  .forEach(p => p.discard());
+              }}
               onNewClick={() => props.projects.addEmptyProject()}
               onAddClick={() => electron.ipcRenderer.send("open-from-fs")}
             />

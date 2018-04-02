@@ -48,67 +48,21 @@ async function main() {
   window.webContents.on("context-menu", (e, props) => {
     const el = document.elementFromPoint(props.x, props.y);
     const tid = uuid.v4();
-
-    projects.up.subscribe((message) => {
-      const match = Msg.match(message);
-
-      match(Msg.UI.ContextMenuResponse, () => {
-        if (message.tid !== tid) {
-          return;
-        }
-
-        const project: ProjectViewModel = message.project;
-
-        const items = [
-          project.isReady() && !project.isStarted() && {
-            label: "Start",
-            click: () => project.start({open: false})
-          },
-          project.isStarted() && {
-            label: "Open",
-            click: () => project.open()
-          },
-          project.isStarted() && {
-            label: "Stop",
-            click: () => project.stop()
-          },
-          project.isWorking() && project.managed && {
-            label: "Abort",
-            click: () => {}
-          },
-          {
-            type: "separator"
-          },
-          !project.isWorking() && !project.inTransition() && {
-            label: project.managed ? "Remove" : "Unlist",
-            click: () => project.remove()
-          },
-          !project.inTransition() && !project.isWorking() && project.managed && {
-            label: "Force sync",
-            click: () => project.clone()
-          },
-          {
-            type: "separator"
-          },
-          {
-            label: "Reveal in Finder",
-            click: () => electron.remote.shell.openItem(project.path)
-          },
-          {
-            label: "Copy Path",
-            click: () => electron.clipboard.writeText(project.path)
-          }
-        ].filter(Boolean);
-
-        const menu = electron.remote.Menu.buildFromTemplate(items as any);
-
-        menu.popup(window, {
-          async: true
-        });
-      })
-    });
-
     projects.broadcast(new Msg.UI.ContextMenuRequest(tid, el));
+  });
+
+  projects.up.subscribe((message) => {
+    const match = Msg.match(message);
+
+    match(Msg.UI.ContextMenuResponse, () => {
+      const project: ProjectViewModel = message.project;
+      const items = selectItems(project);
+      const menu = electron.remote.Menu.buildFromTemplate(items as any);
+
+      menu.popup(window, {
+        async: true
+      });
+    })
   });
 
   electron.ipcRenderer.on("menu-request-new", () => {
@@ -150,3 +104,59 @@ main()
   .catch(err => {
     console.error(err); // tslint:disable-line
   })
+
+const selectItems = (project: ProjectViewModel): any[] => {
+  if (project.editable) {
+    return [
+      {
+        label: "Save",
+        click: () => project.save()
+      },
+      {
+        label: "Discard",
+        click: () => project.discard()
+      }
+    ];
+  }
+
+  return [
+    project.isReady() && !project.isStarted() && !project.editable && {
+      label: "Start",
+      click: () => project.start({ open: false })
+    },
+    project.isStarted() && !project.editable && {
+      label: "Open",
+      click: () => project.open()
+    },
+    project.isStarted() && !project.editable && {
+      label: "Stop",
+      click: () => project.stop()
+    },
+    project.isWorking() && project.managed && {
+      label: "Abort",
+      click: () => {}
+    },
+    {
+      type: "separator"
+    },
+    !project.isWorking() && !project.inTransition() && {
+      label: project.managed ? "Remove" : "Unlist",
+      click: () => project.remove()
+    },
+    !project.inTransition() && !project.isWorking() && project.managed && {
+      label: "Force sync",
+      click: () => project.clone()
+    },
+    {
+      type: "separator"
+    },
+    {
+      label: "Reveal in Finder",
+      click: () => electron.remote.shell.openItem(project.path)
+    },
+    {
+      label: "Copy Path",
+      click: () => electron.clipboard.writeText(project.path)
+    }
+  ].filter(Boolean);
+}

@@ -139,8 +139,8 @@ export class ProjectViewCollection {
   }
 
   bind(item: ProjectViewModel) {
-    this.up = merge(this.up, item.up);
-    this.down = merge(this.down, item.down);
+    item.up.subscribe(message => (this.up as Subject<any>).next(message));
+    item.down.subscribe(message => (this.down as Subject<any>).next(message));
   }
 
   listen() {

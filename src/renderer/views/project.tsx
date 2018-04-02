@@ -1,5 +1,6 @@
 import * as React from "react";
 import {observer} from "mobx-react";
+import * as uuid from "uuid";
 import * as Msg from "../../messages";
 import * as svg from "../util/svg";
 
@@ -65,33 +66,30 @@ export class ProjectView extends React.Component<ProjectViewProps> {
           keyframes={WIGGLE}
           onDoubleClick={props.onDoubleClick}
         >
-          <ProjectIcon
-            icon={props.project.logo}
-            loading={props.project.isWorking()}
-            label={getPhase(props.project.state)}
-          />
-          <ProjectProperties>
-            <ProjectName
-              onChange={(e: any) => props.project.setInputName(e.target.value)}
-              readOnly={props.project.editable !== true}
-              value={props.project.inputName || props.project.name || ""}
+          <ProjectTilePreview/>
+          <ProjectTileBar>
+            <ProjectIcon
+              icon={props.project.logo}
+              loading={props.project.isWorking()}
+              label={getPhase(props.project.state)}
             />
-            <ProjectUrl
-              onChange={(e: any) => props.project.setInputUrl(e.target.value)}
-              readOnly={props.project.editable !== true}
-              value={props.project.inputUrl || props.project.url || ""}
-            />
-          </ProjectProperties>
-          {props.project.editable && (
-            <ProjectActions>
-              <ProjectAction actionType="negative" type="reset">
-                <Text>Discard</Text>
-              </ProjectAction>
-              <ProjectAction actionType="affirmative" type="submit">
-                <Text>Save</Text>
-              </ProjectAction>
-            </ProjectActions>
-          )}
+            <ProjectProperties>
+              <ProjectName
+                onChange={(e: any) => props.project.setInputName(e.target.value)}
+                readOnly={props.project.editable !== true}
+                value={props.project.inputName || props.project.name || ""}
+              />
+              <ProjectUrl
+                onChange={(e: any) => props.project.setInputUrl(e.target.value)}
+                readOnly={props.project.editable !== true}
+                value={props.project.inputUrl || props.project.url || ""}
+              />
+            </ProjectProperties>
+            <MoreButton onClick={(e) => {
+              const tid = uuid.v4();
+              this.props.project.up.next(new Msg.UI.ContextMenuResponse(tid, this.props.project));
+            }}/>
+          </ProjectTileBar>
         </ProjectTile>
       </form>
     );
@@ -129,6 +127,54 @@ const getPhase = (state: ProjectViewState): string => {
         return "";
     }
 }
+
+interface MoreButtonProps {
+  onClick: React.MouseEventHandler<HTMLElement>;
+}
+
+const MoreButton = (props: MoreButtonProps) => (
+  <StyledMoreButton onClick={props.onClick}>
+    <MoreIcon viewBox="0 0 66 66">
+      <circle cx="33" cy="15.2" r="5.9"/>
+      <circle cx="33" cy="33" r="5.9"/>
+      <circle cx="33" cy="50.8" r="5.9"/>
+    </MoreIcon>
+  </StyledMoreButton>
+);
+
+const StyledMoreButton = styled.a`
+  margin-left: 15px;
+  margin-right: -5px;
+  color: #aaa;
+  cursor: pointer;
+  :hover {
+    color: #0F0F32;
+  }
+`;
+
+const MoreIcon = styled.svg`
+  fill: currentColor;
+  width: 30px;
+  height: 30px;
+`;
+
+const ProjectTileBar = styled.div`
+  box-sizing: border-box;
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #fff;
+  padding: 10px 15px;
+  width: 100%;
+`;
+
+const ProjectTilePreview = styled.div`
+  position: relative;
+  height: 200px;
+  width: 100%;
+  background: #e5e5e5;
+`;
 
 const ProjectProperties = styled.div`
   flex: 1 1 100%;
@@ -188,16 +234,16 @@ const SPIN = keyframes`
 
 const StyledIconContainer = styled.div`
   position: absolute;
-  width: 90px;
-  height: 90px;
+  width: 45px;
+  height: 45px;
   display: flex;
   align-items: center;
   justify-content: center;
 `;
 
 const StyledDefaultIcon = styled(Icon).attrs({ symbol: "patternplate" })`
-  width: 60px;
-  height: 60px;
+  width: 30px;
+  height: 30px;
 `;
 
 const StyledIconText = styled(Text)`
@@ -225,8 +271,8 @@ const StyledIconText = styled(Text)`
 
 const IconCircumfence = styled.svg.attrs({ viewBox: "0 0 100 100" })`
   position: absolute;
-  width: 90px;
-  height: 90px;
+  width: 45px;
+  height: 45px;
   circle {
     fill: transparent;
     stroke-width: ${(props: any) => props.loading ? 1: 0};
@@ -244,70 +290,26 @@ const StyledProjectIcon = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-  flex: 0 0 90px;
-  height: 90px;
-  width: 90px;
+  position: relative;
+  flex: 0 0 45px;
+  height: 45px;
+  width: 45px;
+  margin-right: 10px;
   border-radius: 50%;
   box-shadow: 0 0 6px rgba(0, 0, 0, 0.12);
-  margin-right: 15px;
   overflow: hidden;
   font-size: 13px;
   color: #999;
   background: ${(props: any) => props.bg ? props.bg : 'transparent'}
 `;
 
-const ProjectAction = styled.button`
-  background: none;
-  border: none;
-  border-radius: none;
-  text-align: left;
-  cursor: pointer;
-  color: ${(props: any) => props.actionType === "negative" ? props.theme.error : props.theme.active};
-  &:hover {
-    text-decoration: underline;
-    text-decoration-style: dotted;
-  }
-  &:not(:last-child) {
-    margin-right: 10px;
-  }
-  &:focus {
-    outline: none;
-  }
-`;
-
-const ProjectActions = styled.div`
-  opacity: 0;
-  pointer-events: none;
-  display: flex;
-  position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  padding: 20px 0 20px 45px;
-  margin-right: 10px;
-  background-image: linear-gradient(
-    to right,
-    rgba(255, 255, 255, 0),
-    rgba(255, 255, 255, 1) 20%
-  );
-`;
-
 const ProjectTile = styled(Animated.div)`
   position: relative;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
   background: #fff;
   border: 1px solid #979797;
-  border-radius: 6px;
-  padding: 15px;
+  border-radius: 3.5px;
   box-shadow: 0 0 6px rgba(0, 0, 0, 0.12);
   overflow: hidden;
-  margin-bottom: 15px;
-  &:hover ${ProjectActions} {
-    opacity: 1;
-    pointer-events: initial;
-  }
 `;
 
 interface ProjectPropertyProps {
@@ -366,7 +368,7 @@ const ProjectUrl: React.SFC<ProjectNameProps> = props => {
   return (
     <StyledPropertyProjectUrl
       full
-      autoFocus
+      autoFocus={!props.readOnly}
       placeholder="GIT URL"
       readOnly={props.readOnly}
       signify={false}
@@ -383,13 +385,14 @@ const StyledPropertyProjectUrl = styled(ProjectProperty).attrs({name: "url"})`
 
 const StyledPropertyInput = styled.input`
   display: block;
-  padding: ${(props: any) => props.readOnly ? 0 : 8}px 15px;
+  padding: 3px 5px;
   border: ${(props: any) => props.readOnly || !props.signify ? "1.5px dashed transparent" : "1.5px dashed #999"};
   border-radius: 6px;
   box-sizing: border-box;
-  width: ${(props: any) => props.full ? "100%": "auto"};
+  width: 100%;
   text-overflow: ellipsis;
   user-select: ${(props: any) => props.readOnly ? "none" : "auto"};
+  cursor: ${(props: any) => props.readOnly ? "default": "select"};
   &:focus {
     outline: none;
     border: ${(props: any) => props.readOnly ? "1.5px dashed transparent" : "1.5px dashed #999"};
