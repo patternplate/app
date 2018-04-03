@@ -12,6 +12,7 @@ const { Animated } = require("@marionebl/react-web-animation");
 export interface ProjectViewProps {
   project: ProjectViewModel;
   onDoubleClick: React.MouseEventHandler<HTMLElement>;
+  port?: number;
   paths?: {
     userData: string;
   }
@@ -20,12 +21,13 @@ export interface ProjectViewProps {
 interface InjectedProjectViewProps {
   project: ProjectViewModel;
   onDoubleClick: React.MouseEventHandler<HTMLElement>;
+  port: number;
   paths: {
     userData: string;
   }
 }
 
-@inject("paths")
+@inject("paths", "port")
 @observer
 export class ProjectView extends React.Component<ProjectViewProps> {
   private ref: HTMLFormElement | null = null;
@@ -81,7 +83,7 @@ export class ProjectView extends React.Component<ProjectViewProps> {
           keyframes={WIGGLE}
           onDoubleClick={props.onDoubleClick}
         >
-          <ProjectTilePreview/>
+          <ProjectTilePreview src={props.project.screenshot ? `http://localhost:${props.port}/${props.project.screenshot}` : null}/>
           <ProjectTileBar>
             <ProjectIcon
               icon={props.project.logo}
@@ -192,6 +194,10 @@ const ProjectTilePreview = styled.div`
   height: 200px;
   width: 100%;
   background: #e5e5e5;
+  background-image: ${(props: any) => props.src ? `url('${props.src}')` : "none"};
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: top center;
 `;
 
 const ProjectProperties = styled.div`

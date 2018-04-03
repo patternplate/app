@@ -70,6 +70,7 @@ export class ProjectViewModel {
   @observable highlighted: boolean = false;
   @observable port: number = 0;
   @observable editable: boolean = false;
+  @observable screenshot: string = "";
 
   @computed get id() {
     return this.model.id;
@@ -184,6 +185,7 @@ export class ProjectViewModel {
       });
 
       match(Msg.Modules.ModulesBuildEndNotification, () => {
+        this.down.next(new Msg.Project.ProjectScreenshotRequest(this.id));
         this.setState(ProjectViewState.Built);
       });
 
@@ -228,9 +230,13 @@ export class ProjectViewModel {
       match(Msg.VCS.VCSCloneEndNotification, () => this.setProgress(1));
       match(Msg.VCS.VCSErrorNotification, () => this.setProgress(0));
 
-      match(Msg.VCS.VCSProgressNotification, message => {
+      match(Msg.VCS.VCSProgressNotification, () => {
         const {transferProgress} = (message as any);
         this.setProgress(transferProgress.receivedObjects() / transferProgress.totalObjects());
+      });
+
+      match(Msg.Project.ProjectScreenshotNotification, () => {
+        this.setScreenshot(message.image);
       });
     });
   }
@@ -323,6 +329,10 @@ export class ProjectViewModel {
 
   @action setLogo(logo: string) {
     this.logo = logo;
+  }
+
+  @action setScreenshot(screenshot: string) {
+    this.screenshot = screenshot;
   }
 
   analyse() {

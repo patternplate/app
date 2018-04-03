@@ -7,8 +7,8 @@ const isDevelopment = process.env.NODE_ENV !== 'production'
 
 let mainWindow: Electron.BrowserWindow | null;
 
-
 async function createWindow() {
+
   try {
     const installExtension = require("electron-devtools-installer").default;
     const {REACT_DEVELOPER_TOOLS} = require("electron-devtools-installer");
@@ -28,15 +28,6 @@ async function createWindow() {
     titleBarStyle: "hiddenInset",
     title: "patternplate"
   });
-
-  // and load the index.html of the app.
-  mainWindow.loadURL(
-    Url.format({
-      pathname: Path.join(__dirname, "../renderer/index.html"),
-      protocol: "file:",
-      slashes: true
-    })
-  );
 
   if (isDevelopment && process.env.ELECTRON_WEBPACK_WDS_PORT) {
     mainWindow.loadURL(`http://localhost:${process.env.ELECTRON_WEBPACK_WDS_PORT}`)

@@ -29,16 +29,19 @@ export class ProjectViewCollection {
     return this.items.filter(i => i.isStarted());
   }
 
-  static fromStore(store: any) {
+  static fromStore(store: any, options: ProjectOptions) {
     return new ProjectViewCollection({
       store,
       items: (store.get("projects") || [])
         .map((serialized: any) => {
           const data = ARSON.parse(serialized);
           const project = Project.from({
+            id: data.model.id,
             url: data.model.url,
             name: data.model.name,
             path: data.model.path,
+            basePath: options.basePath,
+            autoStart: options.autoStart,
             previous: data,
             managed: data.model.managed
           });
@@ -75,7 +78,7 @@ export class ProjectViewCollection {
   }
 
   @action
-  addProjectByPath(path: string): ProjectViewModel | null {
+  addProjectByPath(path: string, options: ProjectOptions): ProjectViewModel | null {
     const previous = this.items.find(p => p.path === path);
 
     if (previous) {
@@ -83,7 +86,7 @@ export class ProjectViewCollection {
       return null;
     }
 
-    const model = Project.fromPath(path);
+    const model = Project.fromPath(path, options);
     const viewModel = new ProjectViewModel(model);
 
     this.bind(viewModel);
@@ -195,7 +198,9 @@ export class ProjectViewCollection {
   toStore() {
     return this.items
       .filter(p => !p.editable)
-      .map(p => ARSON.stringify(p));
+      .map(p => ARSON.stringify(Object.assign({}, p, {
+        id: p.id
+      })));
   }
 }
 

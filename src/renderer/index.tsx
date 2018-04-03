@@ -1,3 +1,4 @@
+import * as Path from "path";
 import * as React from "react";
 import * as ReactDOM from "react-dom";
 import RedBox from "redbox-react";
@@ -15,6 +16,8 @@ import {
 const electron = require("electron");
 const Store = require("electron-store");
 const { injectGlobal } = require("@patternplate/components");
+const getPort = require("get-port");
+const express = require("express");
 
 async function main() {
   document.addEventListener("dragover", event => event.preventDefault());
@@ -47,8 +50,16 @@ async function main() {
 
   const userData = electron.remote.app.getPath("userData");
 
+  const port = await getPort();
+  const server = express();
+  server.use(express.static(Path.join(userData, "screenshots")));
+  server.listen(port, () => {});
+
   const start = StartViewModel.fromStore(store);
-  const projects = ProjectViewCollection.fromStore(store);
+  const projects = ProjectViewCollection.fromStore(store, {
+    autoStart: false,
+    basePath: userData
+  });
 
   projects.items.map(item => item.analyse());
 
@@ -72,6 +83,10 @@ async function main() {
     });
   });
 
+  electron.ipcRenderer.on("port", (_: any, port: number) => {
+    console.log({port});
+  });
+
   electron.ipcRenderer.on("menu-request-new", () => {
     projects.addEmptyProject({
       basePath: userData,
@@ -82,7 +97,10 @@ async function main() {
   electron.ipcRenderer.on(
     "menu-request-open-from-fs",
     (_: any, path: string) => {
-      projects.addProjectByPath(path);
+      projects.addProjectByPath(path, {
+        basePath: userData,
+        autoStart: false
+      });
     }
   );
 
@@ -93,7 +111,7 @@ async function main() {
 
   try {
     ReactDOM.render(
-      <Provider start={start} projects={projects} paths={{userData}}>
+      <Provider start={start} projects={projects} paths={{userData}} port={port}>
         <App />
       </Provider>,
       el
@@ -106,7 +124,7 @@ async function main() {
     module.hot.accept("./app", () => {
       const NextApp = require("./app").App;
       ReactDOM.render(
-        <Provider start={start} projects={projects} paths={{userData}}>
+        <Provider start={start} projects={projects} paths={{userData}} port={port}>
           <NextApp />
         </Provider>,
         el

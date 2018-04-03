@@ -7,12 +7,19 @@ import { Git, VersionControl } from "./git";
 import { Modules } from "./modules";
 import { Channel } from "./nextable";
 
+declare var __static: string;
+
+const execa = require("execa");
 const gitUrlParse = require("git-url-parse");
+const sander = require("@marionebl/sander");
+
+const SCREENSHOT = Path.join(__static, "screenshot.js");
 
 export interface ProjectInit {
   autoStart?: boolean;
   id?: string;
   name: string;
+  basePath: string;
   path: string;
   url: string;
   previous: { [key: string]: any } | null;
@@ -40,6 +47,7 @@ export class Project implements Channel {
   public readonly modules: Modules<Project>;
   public readonly previous: any;
   public readonly managed: boolean;
+  public readonly basePath: string;
 
   public readonly up: Subject<any> = new Subject();
   public readonly down: Subject<any> = new Subject();
@@ -47,6 +55,7 @@ export class Project implements Channel {
   static createEmpty(opts: ProjectOptions): Project {
     return new Project({
       url: "",
+      basePath: opts.basePath,
       path: Path.join(opts.basePath, uuid.v4()),
       name: "",
       previous: null,
@@ -65,6 +74,7 @@ export class Project implements Channel {
     return new Project({
       name: input.name,
       url: input.url,
+      basePath: opts.basePath,
       path: Path.join(opts.basePath, parsed.full_name.split("/").join(Path.sep)),
       previous: null,
       autoStart: opts.autoStart,
@@ -74,9 +84,9 @@ export class Project implements Channel {
 
   static fromUrl(url: string, options: ProjectOptions): Project {
     const parsed = gitUrlParse(url);
-
     return new Project({
       url,
+      basePath: options.basePath,
       path: Path.join(options.basePath, parsed.full_name.split("/").join(Path.sep)),
       name: parsed.full_name,
       previous: null,
@@ -85,13 +95,14 @@ export class Project implements Channel {
     });
   }
 
-  static fromPath(path: string): Project {
+  static fromPath(path: string, options: ProjectOptions): Project {
     return new Project({
       url: "",
       path,
+      basePath: options.basePath,
       name: "",
       previous: null,
-      autoStart: false,
+      autoStart: options.autoStart,
       managed: false
     });
   }
@@ -105,6 +116,7 @@ export class Project implements Channel {
     this.previous = init.previous;
     this.name = init.name;
     this.managed = init.managed;
+    this.basePath = init.basePath;
 
     if (typeof init.autoStart === "boolean") {
       this.autoStart = init.autoStart;
@@ -118,6 +130,7 @@ export class Project implements Channel {
       match(Msg.Project.ProjectBuildRequest, () => this.build());
       match(Msg.Project.ProjectStartRequest, () => this.start());
       match(Msg.Project.ProjectAnalyseRequest, () => this.analyse());
+      match(Msg.Project.ProjectScreenshotRequest, () => this.screenshot())
     });
 
     this.up.subscribe((message: any) => {
@@ -129,7 +142,9 @@ export class Project implements Channel {
           synced: resp.synced,
           installed: resp.synced,
           diff: resp.diff
-        }))
+        }));
+
+        this.screenshot();
       });
 
       match(Msg.VCS.VCSReadResponse, (resp: any) => {
@@ -140,6 +155,8 @@ export class Project implements Channel {
           name: resp.name,
           url: resp.url
         }));
+
+        this.screenshot();
       });
 
       match(Msg.Modules.ModulesConfigureResponse, (resp: any) => {
@@ -239,5 +256,24 @@ export class Project implements Channel {
 
   setConfig(config: any) {
     this.config = config;
+  }
+
+  async screenshot() {
+    const outputPath = Path.join(this.basePath, `screenshots`, `${this.id}.png`);
+
+    if (await sander.exists(outputPath)) {
+      this.up.next(new Msg.Project.ProjectScreenshotNotification(this.id, {
+        project: this.id,
+        image: Path.basename(outputPath)
+      }));
+    }
+
+    const buildPath = await this.modules.getBuild();
+    await execa(SCREENSHOT, [buildPath, outputPath]);
+
+    this.up.next(new Msg.Project.ProjectScreenshotNotification(this.id, {
+      project: this.id,
+      image: Path.basename(outputPath)
+    }));
   }
 }
