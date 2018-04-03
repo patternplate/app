@@ -67,9 +67,10 @@ export class ProjectTab extends React.Component<ProjectTabProps> {
 
 const StyledChromeTab = styled.a`
   display: flex;
+  flex: 0 1 auto;
   align-items: center;
   height: 100%;
-  max-width: 150px;
+  min-width: 100px;
   overflow: hidden;
   font-size: 13px;
   box-sizing: border-box;
@@ -87,6 +88,7 @@ const StyledChromeTab = styled.a`
 const StyledChromeLabel = styled(Text)`
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
 `;
 
 const StyledCloseIcon = styled.a`

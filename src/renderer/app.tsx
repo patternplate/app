@@ -142,6 +142,7 @@ const StyledChrome = styled.header`
 
 const StyledChromeTab = styled.a`
   display: flex;
+  flex: 0 0 auto;
   align-items: center;
   height: 100%;
   max-width: 150px;
@@ -160,7 +161,7 @@ const StyledChromeTab = styled.a`
 `;
 
 const StyledTrafficLightSpacer = styled.div`
-  flex: 0 0 80;
+  flex: 0 0 80px;
   width: 80px;
   height: 40px;
 `;

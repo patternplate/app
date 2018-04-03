@@ -52,27 +52,15 @@ export class ProjectsView extends React.Component<ProjectsProps> {
 const StyledProjectsView = styled.div``;
 
 const ProjectsList = styled.ul`
-  list-style-type: none;
+  display: grid;
+  grid-gap: 15px;
+  grid-auto-columns: 1fr;
   padding: 30px 15px;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  list-style-type: none;
   margin-top: 40px;
 `;
 
 const ProjectListItem = styled.li`
-  display: inline-block;
-  margin: 0 15px 15px 0;
-  width: 100%;
-  min-width: 250px;
-  max-width: 100%;
-  @media screen and (min-width: 660px) {
-    width: 50%;
-    max-width: 350px;
-  }
-  @media screen and (min-width: 1024px) {
-    width: 32%;
-    max-width: 300px;
-  }
-  @media screen and (min-width: 1440px) {
-    width: 25%;
-    max-width: 333px;
-  }
+
 `;
