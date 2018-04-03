@@ -6,7 +6,11 @@ import * as uuid from "uuid";
 
 import { App } from "./app";
 import * as Msg from "../messages";
-import { ProjectViewModel, StartViewModel, ProjectViewCollection } from "./view-models";
+import {
+  ProjectViewModel,
+  StartViewModel,
+  ProjectViewCollection
+} from "./view-models";
 
 const electron = require("electron");
 const Store = require("electron-store");
@@ -41,8 +45,11 @@ async function main() {
   el.setAttribute("data.mount", "data-mount");
   document.body.appendChild(el);
 
+  const userData = electron.remote.app.getPath("userData");
+
   const start = StartViewModel.fromStore(store);
   const projects = ProjectViewCollection.fromStore(store);
+
   projects.items.map(item => item.analyse());
 
   window.webContents.on("context-menu", (e, props) => {
@@ -51,27 +58,33 @@ async function main() {
     projects.broadcast(new Msg.UI.ContextMenuRequest(tid, el));
   });
 
-  projects.up.subscribe((message) => {
+  projects.up.subscribe(message => {
     const match = Msg.match(message);
 
     match(Msg.UI.ContextMenuResponse, () => {
       const project: ProjectViewModel = message.project;
-      const items = selectItems(project);
+      const items = selectItems(project, {userData});
       const menu = electron.remote.Menu.buildFromTemplate(items as any);
 
       menu.popup(window, {
         async: true
       });
-    })
+    });
   });
 
   electron.ipcRenderer.on("menu-request-new", () => {
-    projects.addEmptyProject();
+    projects.addEmptyProject({
+      basePath: userData,
+      autoStart: false
+    });
   });
 
-  electron.ipcRenderer.on("menu-request-open-from-fs", (_: any, path: string) => {
-    projects.addProjectByPath(path);
-  });
+  electron.ipcRenderer.on(
+    "menu-request-open-from-fs",
+    (_: any, path: string) => {
+      projects.addProjectByPath(path);
+    }
+  );
 
   if (process.env.NODE_ENV !== "production") {
     (global as any).start = start;
@@ -80,37 +93,41 @@ async function main() {
 
   try {
     ReactDOM.render(
-      <Provider start={start} projects={projects}>
+      <Provider start={start} projects={projects} paths={{userData}}>
         <App />
-      </Provider>
-    , el);
+      </Provider>,
+      el
+    );
   } catch (error) {
-    ReactDOM.render(<RedBox error={error}/>, el);
+    ReactDOM.render(<RedBox error={error} />, el);
   }
 
   if (module.hot) {
     module.hot.accept("./app", () => {
       const NextApp = require("./app").App;
       ReactDOM.render(
-        <Provider start={start} projects={projects}>
-          <NextApp/>
-        </Provider>
-      , el)
+        <Provider start={start} projects={projects} paths={{userData}}>
+          <NextApp />
+        </Provider>,
+        el
+      );
     });
   }
 }
 
-main()
-  .catch(err => {
-    console.error(err); // tslint:disable-line
-  })
+main().catch(err => {
+  console.error(err); // tslint:disable-line
+});
 
-const selectItems = (project: ProjectViewModel): any[] => {
+const selectItems = (project: ProjectViewModel, paths: {userData: string}): any[] => {
   if (project.editable) {
     return [
       {
         label: "Save",
-        click: () => project.save()
+        click: () => project.save({
+          basePath: paths.userData,
+          autoStart: true
+        })
       },
       {
         label: "Discard",
@@ -120,33 +137,41 @@ const selectItems = (project: ProjectViewModel): any[] => {
   }
 
   return [
-    project.isReady() && !project.isStarted() && !project.editable && {
-      label: "Start",
-      click: () => project.start({ open: false })
-    },
-    project.isStarted() && !project.editable && {
-      label: "Open",
-      click: () => project.open()
-    },
-    project.isStarted() && !project.editable && {
-      label: "Stop",
-      click: () => project.stop()
-    },
-    project.isWorking() && project.managed && {
-      label: "Abort",
-      click: () => {}
-    },
+    project.isReady() &&
+      !project.isStarted() &&
+      !project.editable && {
+        label: "Start",
+        click: () => project.start({ open: false })
+      },
+    project.isStarted() &&
+      !project.editable && {
+        label: "Open",
+        click: () => project.open()
+      },
+    project.isStarted() &&
+      !project.editable && {
+        label: "Stop",
+        click: () => project.stop()
+      },
+    project.isWorking() &&
+      project.managed && {
+        label: "Abort",
+        click: () => {}
+      },
     {
       type: "separator"
     },
-    !project.isWorking() && !project.inTransition() && {
-      label: project.managed ? "Remove" : "Unlist",
-      click: () => project.remove()
-    },
-    !project.inTransition() && !project.isWorking() && project.managed && {
-      label: "Force sync",
-      click: () => project.clone()
-    },
+    !project.isWorking() &&
+      !project.inTransition() && {
+        label: project.managed ? "Remove" : "Unlist",
+        click: () => project.remove()
+      },
+    !project.inTransition() &&
+      !project.isWorking() &&
+      project.managed && {
+        label: "Force sync",
+        click: () => project.clone()
+      },
     {
       type: "separator"
     },
@@ -159,4 +184,4 @@ const selectItems = (project: ProjectViewModel): any[] => {
       click: () => electron.clipboard.writeText(project.path)
     }
   ].filter(Boolean);
-}
+};

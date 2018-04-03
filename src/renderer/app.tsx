@@ -21,9 +21,12 @@ const electron = require("electron");
 interface InjectedAppProps {
   start: StartViewModel;
   projects: ProjectViewCollection;
+  paths: {
+    userData: string;
+  }
 }
 
-@inject("start", "projects")
+@inject("start", "projects", "paths")
 @observer
 export class App extends React.Component {
   render() {
@@ -45,6 +48,7 @@ export class App extends React.Component {
             </StyledChromeTab>
             {props.projects.startedProjects.map(project => (
               <ProjectTab
+                key={project.id}
                 active={props.projects.activeProject === project.id}
                 project={project}
                 onClick={() => props.projects.setActiveProject(project.id)}
@@ -60,7 +64,7 @@ export class App extends React.Component {
             <StartView
               value={props.start.input}
               valid={props.start.valid}
-              onNewClick={() => props.projects.addEmptyProject()}
+              onNewClick={() => props.projects.addEmptyProject({ autoStart: true, basePath: props.paths.userData })}
               onAddClick={() => electron.ipcRenderer.send("open-from-fs")}
               onLinkClick={(e: React.MouseEvent<HTMLAnchorElement>) => {
                 e.preventDefault();
@@ -75,7 +79,7 @@ export class App extends React.Component {
                 e.preventDefault();
                 const project = props.projects.addProjectByUrl(
                   props.start.input,
-                  { autoStart: true }
+                  { autoStart: true, basePath: props.paths.userData }
                 );
 
                 if (project) {
@@ -93,7 +97,10 @@ export class App extends React.Component {
                   .filter(p => p.editable)
                   .forEach(p => p.discard());
               }}
-              onNewClick={() => props.projects.addEmptyProject()}
+              onNewClick={() => props.projects.addEmptyProject({
+                basePath: props.paths.userData,
+                autoStart: true
+              })}
               onAddClick={() => electron.ipcRenderer.send("open-from-fs")}
             />
           )}

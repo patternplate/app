@@ -91,14 +91,20 @@ const StyledChromeLabel = styled(Text)`
   white-space: nowrap;
 `;
 
-const StyledCloseIcon = styled.a`
+const StyledCloseIcon = styled.button`
   flex: 0 0 20px;
   transform: rotate(45deg);
   width: 20px;
   height: 20px;
   fill: currentColor;
   border-radius: 50%;
+  border: none;
+  background: none;
+  padding: 0;
+  color: inherit;
+  &:focus,
   &:hover {
+    outline: none;
     background: #0f0f32;
   }
   margin-left: 5px;

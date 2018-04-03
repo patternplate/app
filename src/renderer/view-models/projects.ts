@@ -56,7 +56,7 @@ export class ProjectViewCollection {
   }
 
   @action
-  addProjectByUrl(url: string, options?: ProjectOptions): ProjectViewModel | null {
+  addProjectByUrl(url: string, options: ProjectOptions): ProjectViewModel | null {
     const previous = this.items.find(p => p.url === url);
 
     if (previous) {
@@ -108,7 +108,7 @@ export class ProjectViewCollection {
   }
 
   @action
-  addEmptyProject(): ProjectViewModel | null {
+  addEmptyProject(options: ProjectOptions): ProjectViewModel | null {
     const editable = this.items.find(i => i.editable);
 
     if (editable) {
@@ -116,7 +116,7 @@ export class ProjectViewCollection {
       return null;
     }
 
-    const empty = ProjectViewModel.createEmpty();
+    const empty = ProjectViewModel.createEmpty(options);
     this.items.unshift(empty);
     this.bind(empty);
     this.listen();

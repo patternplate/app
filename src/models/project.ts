@@ -1,4 +1,3 @@
-import * as Os from "os";
 import * as Path from "path";
 import { Subject } from "rxjs";
 import * as uuid from "uuid";
@@ -27,6 +26,7 @@ export interface ProjectInput {
 
 export interface ProjectOptions {
   autoStart: boolean;
+  basePath: string;
 }
 
 export class Project implements Channel {
@@ -44,10 +44,10 @@ export class Project implements Channel {
   public readonly up: Subject<any> = new Subject();
   public readonly down: Subject<any> = new Subject();
 
-  static createEmpty(): Project {
+  static createEmpty(opts: ProjectOptions): Project {
     return new Project({
       url: "",
-      path: Path.join(Os.homedir(), "patternplate", uuid.v4()),
+      path: Path.join(opts.basePath, uuid.v4()),
       name: "",
       previous: null,
       autoStart: true,
@@ -59,28 +59,28 @@ export class Project implements Channel {
     return new Project(init);
   }
 
-  static fromInput(input: ProjectInput): Project {
+  static fromInput(input: ProjectInput, opts: ProjectOptions): Project {
     const parsed = gitUrlParse(input.url);
 
     return new Project({
       name: input.name,
       url: input.url,
-      path: Path.join(Os.homedir(), "patternplate", parsed.full_name.split("/").join(Path.sep)),
+      path: Path.join(opts.basePath, parsed.full_name.split("/").join(Path.sep)),
       previous: null,
-      autoStart: true,
+      autoStart: opts.autoStart,
       managed: true
     });
   }
 
-  static fromUrl(url: string, options?: ProjectOptions): Project {
+  static fromUrl(url: string, options: ProjectOptions): Project {
     const parsed = gitUrlParse(url);
 
     return new Project({
       url,
-      path: Path.join(Os.homedir(), "patternplate", parsed.full_name.split("/").join(Path.sep)),
+      path: Path.join(options.basePath, parsed.full_name.split("/").join(Path.sep)),
       name: parsed.full_name,
       previous: null,
-      autoStart: options ? options.autoStart : false,
+      autoStart: options.autoStart,
       managed: true
     });
   }

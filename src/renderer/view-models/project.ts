@@ -99,8 +99,8 @@ export class ProjectViewModel {
     return this.model.down;
   }
 
-  static createEmpty(): ProjectViewModel {
-    const model = Project.createEmpty();
+  static createEmpty(opts: {basePath: string, autoStart: boolean}): ProjectViewModel {
+    const model = Project.createEmpty(opts);
     return new ProjectViewModel(model, {editable: true});
   }
 
@@ -349,7 +349,7 @@ export class ProjectViewModel {
     this.model.remove();
   }
 
-  @action save() {
+  @action save(opts: {basePath: string, autoStart: boolean}) {
     if (!this.inputUrl) {
       return;
     }
@@ -357,7 +357,7 @@ export class ProjectViewModel {
     const model = Project.fromInput({
       name: this.inputName,
       url: this.inputUrl
-    });
+    }, opts);
 
     const tid = uuid.v4();
 

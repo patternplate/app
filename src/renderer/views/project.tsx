@@ -1,10 +1,10 @@
 import * as React from "react";
-import {observer} from "mobx-react";
+import { inject, observer } from "mobx-react";
 import * as uuid from "uuid";
 import * as Msg from "../../messages";
 import * as svg from "../util/svg";
 
-import {ProjectViewModel, ProjectViewState} from "../view-models";
+import { ProjectViewModel, ProjectViewState } from "../view-models";
 
 const { keyframes, styled, Icon } = require("@patternplate/components");
 const { Animated } = require("react-web-animation");
@@ -12,8 +12,20 @@ const { Animated } = require("react-web-animation");
 export interface ProjectViewProps {
   project: ProjectViewModel;
   onDoubleClick: React.MouseEventHandler<HTMLElement>;
+  paths?: {
+    userData: string;
+  }
 }
 
+interface InjectedProjectViewProps {
+  project: ProjectViewModel;
+  onDoubleClick: React.MouseEventHandler<HTMLElement>;
+  paths: {
+    userData: string;
+  }
+}
+
+@inject("paths")
 @observer
 export class ProjectView extends React.Component<ProjectViewProps> {
   private ref: HTMLFormElement | null = null;
@@ -37,7 +49,7 @@ export class ProjectView extends React.Component<ProjectViewProps> {
   }
 
   render() {
-    const {props} = this;
+    const props = (this.props as InjectedProjectViewProps);
 
     return (
       <form
@@ -46,7 +58,10 @@ export class ProjectView extends React.Component<ProjectViewProps> {
         onSubmit={(e: any) => {
           e.preventDefault();
           if (props.project.editable) {
-            return props.project.save();
+            return props.project.save({
+              basePath: props.paths.userData,
+              autoStart: true
+            });
           }
           if (props.project.isReady()) {
             return props.project.start();

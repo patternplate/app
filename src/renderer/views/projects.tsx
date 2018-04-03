@@ -30,9 +30,8 @@ export class ProjectsView extends React.Component<ProjectsProps> {
         <ProjectsToolbar onNewClick={props.onNewClick} onAddClick={props.onAddClick}/>
         <ProjectsList>
           {props.projects.items.map((project: ProjectViewModel) => (
-            <ProjectListItem editable={project.editable}>
+            <ProjectListItem key={project.id} editable={project.editable}>
               <ProjectView
-                key={project.id}
                 project={project}
                 onDoubleClick={project.editable
                   ? () => {}
