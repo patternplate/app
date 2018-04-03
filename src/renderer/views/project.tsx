@@ -7,7 +7,7 @@ import * as svg from "../util/svg";
 import { ProjectViewModel, ProjectViewState } from "../view-models";
 
 const { keyframes, styled, Icon } = require("@patternplate/components");
-const { Animated } = require("react-web-animation");
+const { Animated } = require("@marionebl/react-web-animation");
 
 export interface ProjectViewProps {
   project: ProjectViewModel;

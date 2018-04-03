@@ -48,6 +48,7 @@
     "webpack": "3"
   },
   "dependencies": {
+    "@marionebl/react-web-animation": "0.7.2",
     "@marionebl/sander": "^0.6.1",
     "@patternplate/cli": "^2.0.4",
     "@patternplate/components": "^2.0.0",
@@ -66,7 +67,6 @@
     "npm": "^5.8.0",
     "react": "^16.2.0",
     "react-dom": "^16.2.0",
-    "react-web-animation": "^0.7.0",
     "read-pkg": "^3.0.0",
     "redbox-react": "^1.5.0",
     "resolve-bin": "^0.4.0",
