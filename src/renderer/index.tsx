@@ -83,10 +83,6 @@ async function main() {
     });
   });
 
-  electron.ipcRenderer.on("port", (_: any, port: number) => {
-    console.log({port});
-  });
-
   electron.ipcRenderer.on("menu-request-new", () => {
     projects.addEmptyProject({
       basePath: userData,

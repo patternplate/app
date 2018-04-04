@@ -174,8 +174,8 @@ const StyledMoreButton = styled.a`
 
 const MoreIcon = styled.svg`
   fill: currentColor;
-  width: 30px;
-  height: 30px;
+  width: 21px;
+  height: 21px;
 `;
 
 const ProjectTileBar = styled.div`
@@ -187,6 +187,7 @@ const ProjectTileBar = styled.div`
   background: #fff;
   padding: 10px 15px;
   width: 100%;
+  box-shadow: 0 -1px 2px rgba(0, 0, 0, .05);
 `;
 
 const ProjectTilePreview = styled.div`

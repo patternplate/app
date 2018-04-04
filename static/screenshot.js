@@ -16,9 +16,9 @@ async function main(input) {
   await listen(app, port);
 
   const image = await screenshot({
-    url: `http://localhost:${port}`,
-    width: 1024,
-    height: 768
+    url: `http://localhost:${port}?navigation-enabled=false`,
+    width: 800,
+    height: 400
   });
 
   await sander.writeFile(output, image.data);
