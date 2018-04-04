@@ -196,6 +196,10 @@ const selectItems = (project: ProjectViewModel, paths: {userData: string}): any[
     {
       label: "Copy Path",
       click: () => electron.clipboard.writeText(project.path)
+    },
+    {
+      label: "Copy Git",
+      click: () => electron.clipboard.writeText(project.url)
     }
   ].filter(Boolean);
 };
