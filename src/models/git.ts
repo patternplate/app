@@ -1,4 +1,5 @@
 import * as Path from "path";
+import * as Url from "url";
 import * as uuid from "uuid";
 import * as execa from "execa";
 import * as loadJsonFile from "load-json-file";
@@ -18,9 +19,9 @@ require("yarn/package");
 require("rimraf/package");
 
 export interface VersionControl {
-  clone(n: Channel): void;
-  fetch(n: Channel): void;
-  remove(n: Channel): void;
+  clone(token?: string): void;
+  fetch(token?: string): void;
+  remove(token?: string): void;
 }
 
 export interface VersionControllable extends Channel {
@@ -33,6 +34,7 @@ const PREFIX = require("find-up").sync("node_modules", {cwd: __dirname});
 const RIMRAF = Path.join(PREFIX, ".bin", "rimraf");
 const GIT = Path.join((__static), "git", "macos", "bin", "git");
 const GIT_EXEC_PATH = Path.dirname(GIT);
+const GIT_TERMINAL_PROMPT = "0";
 
 export class Git<T extends VersionControllable> implements VersionControl {
   readonly host: T;
@@ -88,8 +90,14 @@ export class Git<T extends VersionControllable> implements VersionControl {
       }));
     }
 
+    // TODO: Fetch here
+
     const diffResult = await execa(GIT, ["log", "master..origin/master", "--oneline", "--format=format:%H"], {
-      cwd: this.host.path
+      cwd: this.host.path,
+      env: {
+        GIT_EXEC_PATH,
+        GIT_TERMINAL_PROMPT
+      }
     })
       .catch(() => {
         return this.host.up.next(new VCS.VCSAnalyseResponse(this.host.id, {
@@ -149,7 +157,7 @@ export class Git<T extends VersionControllable> implements VersionControl {
       });
   }
 
-  async clone() {
+  async clone(token?: string) {
     const host = this.host;
     const tid = uuid.v4();
 
@@ -170,11 +178,25 @@ export class Git<T extends VersionControllable> implements VersionControl {
       await sander.rimraf(host.path);
     }
 
+    const parsed = Url.parse(this.host.url);
+
+    if (token) {
+      parsed.auth = ['oauth2', token].join(':');
+    }
+
+    const url = Url.format(parsed);
+
     try {
-      await execa(GIT, ["clone", this.host.url, this.host.path], {
+      await execa(GIT, [
+        "-c", "credential.helper=",
+        "clone",
+        url,
+        this.host.path
+      ], {
         stdio: "inherit",
         env: {
-          GIT_EXEC_PATH
+          GIT_EXEC_PATH,
+          GIT_TERMINAL_PROMPT
         }
       });
       host.up.next(new VCS.VCSCloneEndNotification(tid, {
@@ -182,6 +204,26 @@ export class Git<T extends VersionControllable> implements VersionControl {
         path: host.path
       }));
     } catch (err) {
+      if (err.code === 128 && parsed.protocol === "https:") {
+        host.down.subscribe((message: any) => {
+          if (message.tid !== tid) {
+            return;
+          }
+
+          const match = Msg.match(message);
+
+          match(Msg.VCS.VCSCredentialAnswer, () => {
+            if (message.host !== parsed.host) {
+              return;
+            }
+
+            this.clone(message.token);
+          });
+        });
+
+        return host.up.next(new VCS.VCSCredentialChallenge(tid, this.host.url));
+      }
+
       host.up.next(new VCS.VCSErrorNotification(tid, err));
     }
   }
@@ -195,10 +237,14 @@ export class Git<T extends VersionControllable> implements VersionControl {
     }));
 
     try {
-      await execa(GIT, ["pull", "origin/master"], {
+      await execa(GIT, [
+        "-c", "credential.helper=",
+        "pull", "origin/master"
+      ], {
         stdio: "inherit",
         env: {
-          GIT_EXEC_PATH
+          GIT_EXEC_PATH,
+          GIT_TERMINAL_PROMPT
         }
       });
 

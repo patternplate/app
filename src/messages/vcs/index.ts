@@ -1,3 +1,5 @@
+export {VCSCredentialChallenge} from "./vcs-credentical-challenge";
+export {VCSCredentialAnswer} from "./vcs-credentical-answer";
 export {VCSProgressNotification} from "./vcs-progress-notification";
 export {VCSCloneRequest} from "./vcs-clone-request";
 export {VCSCloneStartNotification} from "./vcs-clone-start-notification";

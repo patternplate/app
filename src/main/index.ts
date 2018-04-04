@@ -180,7 +180,6 @@ const openFromFs = () => {
 app.on("ready", () => {
   createMenu();
   createWindow();
-
   ipcMain.on("open-from-fs", () => openFromFs());
 });
 

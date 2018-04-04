@@ -3275,6 +3275,12 @@ electron-localshortcut@^3.0.0:
     keyboardevent-from-electron-accelerator "^1.1.0"
     keyboardevents-areequal "^0.2.1"
 
+electron-oauth-helper@^2.0.3:
+  version "2.0.3"
+  resolved "https://registry.yarnpkg.com/electron-oauth-helper/-/electron-oauth-helper-2.0.3.tgz#177a50c0e20c5c12faf0bd332d307d1f9806a8f1"
+  dependencies:
+    debug "3.1.0"
+
 electron-osx-sign@0.4.10:
   version "0.4.10"
   resolved "https://registry.yarnpkg.com/electron-osx-sign/-/electron-osx-sign-0.4.10.tgz#be4f3b89b2a75a1dc5f1e7249081ab2929ca3a26"

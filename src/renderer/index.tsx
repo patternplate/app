@@ -1,3 +1,4 @@
+import * as Url from "url";
 import * as Path from "path";
 import * as React from "react";
 import * as ReactDOM from "react-dom";
@@ -7,6 +8,8 @@ import * as uuid from "uuid";
 
 import { App } from "./app";
 import * as Msg from "../messages";
+import config from "../config";
+
 import {
   ProjectViewModel,
   StartViewModel,
@@ -18,6 +21,7 @@ const Store = require("electron-store");
 const { injectGlobal } = require("@patternplate/components");
 const getPort = require("get-port");
 const express = require("express");
+const { OAuth2Provider } = require("electron-oauth-helper");
 
 async function main() {
   document.addEventListener("dragover", event => event.preventDefault());
@@ -81,6 +85,21 @@ async function main() {
         async: true
       });
     });
+
+    match(Msg.VCS.VCSCredentialChallenge, () => {
+      const parsed = Url.parse(message.url);
+
+      requestOAuthToken(message.url)
+        .then(response => {
+          projects.broadcast(new Msg.VCS.VCSCredentialAnswer(message.tid, {
+            host: parsed.host as string,
+            token: response.access_token
+          }))
+        })
+        .catch(err => {
+          console.log(err);
+        });
+    });
   });
 
   electron.ipcRenderer.on("menu-request-new", () => {
@@ -132,6 +151,63 @@ async function main() {
 main().catch(err => {
   console.error(err); // tslint:disable-line
 });
+
+interface OAuthResponse {
+  access_token: string;
+  state: string;
+  token_type: "bearer";
+}
+
+function requestOAuthToken(url: string): Promise<OAuthResponse> {
+  const win = new electron.remote.BrowserWindow({
+    width: 0,
+    height: 0,
+    title: `Login for ${url}`,
+    webPreferences: {
+      nodeIntegration: false,
+      contextIsolation: true
+    }
+  });
+
+  const parsed = Url.parse(url);
+  const hostConfig = config.oauth.find(h => h.hostname == parsed.hostname);
+
+  if (!hostConfig) {
+    return Promise.reject(new Error(`Could not authenticate at ${parsed.hostname} via https, please use SSH instead.`));
+  }
+
+  const state = uuid.v4();
+
+  const provider = new OAuth2Provider({
+    authorize_url: hostConfig.authorize,
+    response_type: "token",
+    client_id: hostConfig.clientId,
+    redirect_uri: "http://app.authorized.patternplate",
+    state
+  });
+
+  const showTimeout = setTimeout(() => {
+    win.setSize(600, 400);
+    win.show();
+  }, 2000);
+
+  return provider
+    .perform(win)
+    .then((response: OAuthResponse) => {
+      if (response.state !== state) {
+        return Promise.reject(new Error(`Authentication at ${parsed.hostname}, states did not match.`));
+      }
+
+      clearTimeout(showTimeout);
+      win.close();
+      return response;
+    })
+    .catch((err: Error) => {
+      clearTimeout(showTimeout);
+      win.close();
+      return err;
+    });
+}
 
 const selectItems = (project: ProjectViewModel, paths: {userData: string}): any[] => {
   if (project.editable) {
