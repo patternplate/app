@@ -4,7 +4,6 @@ import * as ChildProcess from "child_process";
 import * as uuid from "uuid";
 import * as semver from "semver";
 import * as loadJsonFile from "load-json-file";
-import * as tempy from "tempy";
 
 import {Channel} from "./nextable";
 import * as Msg from "../messages";
@@ -28,6 +27,7 @@ const GET_PORT = Path.join(PREFIX, ".bin", "get-port");
 
 export interface Installable extends Channel {
   id: string;
+  basePath: string;
   path: string;
 }
 
@@ -208,8 +208,7 @@ export class Modules<T extends Installable> {
     this.host.up.next(new Msg.Modules.ModulesStopEndNotification(id))
   }
 
-  public getBuild(): Promise<string> {
-    const buildPath = tempy.directory();
+  public getBuild(buildPath: string): Promise<string> {
     const pp = getExectuable({ cwd: this.host.path });
 
     const cp = ChildProcess.fork(pp, ["build", "--base", "/", "--out", buildPath, "--cwd", this.host.path], {

@@ -259,21 +259,23 @@ export class Project implements Channel {
   }
 
   async screenshot() {
-    const outputPath = Path.join(this.basePath, `screenshots`, `${this.id}.png`);
+    const screenshotPath = Path.join(this.basePath, `screenshots`, `${this.id}.png`);
+    const buildPath = Path.join(this.basePath, `builds`, this.id);
 
-    if (await sander.exists(outputPath)) {
-      this.up.next(new Msg.Project.ProjectScreenshotNotification(this.id, {
-        project: this.id,
-        image: Path.basename(outputPath)
-      }));
+    const image = Path.basename(screenshotPath);
+    const payload = {image, project: this.id};
+
+    if (await sander.exists(screenshotPath)) {
+      return this.up.next(new Msg.Project.ProjectScreenshotNotification(this.id, payload));
     }
 
-    const buildPath = await this.modules.getBuild();
-    await execa(SCREENSHOT, [buildPath, outputPath]);
+    if (await sander.exists(buildPath)) {
+      await execa(SCREENSHOT, [buildPath, screenshotPath]);
+      return this.up.next(new Msg.Project.ProjectScreenshotNotification(this.id, payload));
+    }
 
-    this.up.next(new Msg.Project.ProjectScreenshotNotification(this.id, {
-      project: this.id,
-      image: Path.basename(outputPath)
-    }));
+    await this.modules.getBuild(buildPath);
+    await execa(SCREENSHOT, [buildPath, screenshotPath]);
+    this.up.next(new Msg.Project.ProjectScreenshotNotification(this.id, payload));
   }
 }
