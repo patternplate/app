@@ -91,7 +91,6 @@ export class Git<T extends VersionControllable> implements VersionControl {
     }
 
     // TODO: Fetch here
-
     const diffResult = await execa(GIT, ["log", "master..origin/master", "--oneline", "--format=format:%H"], {
       cwd: this.host.path,
       env: {
@@ -134,10 +133,7 @@ export class Git<T extends VersionControllable> implements VersionControl {
 
     const urlResult = await execa(GIT, ["config", "--get", "remote.origin.url"], {
       cwd: this.host.path
-    })
-      .catch(err => {
-        console.error(err);
-      });
+    }).catch(err => { console.error(err); });
 
     if (urlResult) {
       const url = urlResult.stdout;
@@ -174,9 +170,34 @@ export class Git<T extends VersionControllable> implements VersionControl {
       await sander.mkdir(Path.dirname(host.path));
     }
 
-    if (await sander.exists(host.path)) {
-      await sander.rimraf(host.path);
+    const parsed = Url.parse(this.host.url);
+
+    if (token) {
+      parsed.auth = ['oauth2', token].join(':');
     }
+
+    const url = Url.format(parsed);
+    const git = authorizingGit({context: this, tid});
+
+    git(["clone", url, this.host.path])
+      .catch((err: Error) => {
+        host.up.next(new VCS.VCSErrorNotification(tid, err));
+      })
+      .then(() => {
+        host.up.next(new VCS.VCSCloneEndNotification(tid, {
+          url: host.url,
+          path: host.path
+        }));
+      });
+  }
+
+  async fetch(token?: string) {
+    const tid = uuid.v4();
+
+    this.host.up.next(new VCS.VCSFetchStartNotification(tid, {
+      url: this.host.url,
+      path: this.host.path
+    }));
 
     const parsed = Url.parse(this.host.url);
 
@@ -185,77 +206,41 @@ export class Git<T extends VersionControllable> implements VersionControl {
     }
 
     const url = Url.format(parsed);
+    const git = authorizingGit({context: this, tid});
 
-    try {
-      await execa(GIT, [
-        "-c", "credential.helper=",
-        "clone",
-        url,
-        this.host.path
-      ], {
-        stdio: "inherit",
-        env: {
-          GIT_EXEC_PATH,
-          GIT_TERMINAL_PROMPT
-        }
-      });
-      host.up.next(new VCS.VCSCloneEndNotification(tid, {
-        url: host.url,
-        path: host.path
-      }));
-    } catch (err) {
-      if (err.code === 128 && parsed.protocol === "https:") {
-        host.down.subscribe((message: any) => {
-          if (message.tid !== tid) {
-            return;
-          }
+    await git(["fetch", "-a"], {cwd: this.host.path});
 
-          const match = Msg.match(message);
-
-          match(Msg.VCS.VCSCredentialAnswer, () => {
-            if (message.host !== parsed.host) {
-              return;
-            }
-
-            this.clone(message.token);
-          });
-        });
-
-        return host.up.next(new VCS.VCSCredentialChallenge(tid, this.host.url));
+    const result = await execa(GIT, ["log", "master..origin/master", "--oneline", "--format=format:%H"], {
+      cwd: this.host.path,
+      stdout: "pipe",
+      stderr: "pipe",
+      env: {
+        GIT_EXEC_PATH,
+        GIT_TERMINAL_PROMPT
       }
+    });
 
-      host.up.next(new VCS.VCSErrorNotification(tid, err));
-    }
-  }
+    const diff = result.stdout.split("\n").filter(Boolean);
 
-  async fetch() {
-    const tid = uuid.v4();
-
-    this.host.up.next(new VCS.VCSFetchStartNotification(tid, {
-      url: this.host.url,
-      path: this.host.path
-    }));
-
-    try {
-      await execa(GIT, [
-        "-c", "credential.helper=",
-        "pull", "origin/master"
-      ], {
-        stdio: "inherit",
-        env: {
-          GIT_EXEC_PATH,
-          GIT_TERMINAL_PROMPT
-        }
-      });
-
-      this.host.up.next(new VCS.VCSFetchEndNotification(tid, {
+    if (diff.length === 0) {
+      return this.host.up.next(new VCS.VCSFetchEndNotification(tid, {
         url: this.host.url,
         path: this.host.path,
-        diff: []
+        diff
       }));
-    } catch (err) {
-      this.host.up.next(new VCS.VCSErrorNotification(tid, err));
     }
+
+    git(["pull"], { cwd: this.host.path })
+      .catch((err: Error) => {
+        this.host.up.next(new VCS.VCSErrorNotification(tid, err));
+      })
+      .then(() => {
+        this.host.up.next(new VCS.VCSFetchEndNotification(tid, {
+          url: this.host.url,
+          path: this.host.path,
+          diff
+        }));
+      });
   }
 
   remove() {
@@ -276,4 +261,49 @@ export class Git<T extends VersionControllable> implements VersionControl {
         this.host.up.next(new VCS.VCSRemoveResponse(this.host.id, (this.host as any).id));
       });
   }
+}
+
+interface AuthorizingGitInit {
+  tid: string;
+  context: Git<VersionControllable>;
+}
+
+const authorizingGit = (init: AuthorizingGitInit) => {
+  const {context, tid} = init;
+  const parsed = Url.parse(context.host.url);
+
+  return (args: string[], options: any = {}) => {
+    return execa(GIT,
+      [
+        "-c", "credential.helper=",
+        ...args
+      ],
+      {
+        env: {
+          GIT_EXEC_PATH,
+          GIT_TERMINAL_PROMPT
+        },
+        ...options
+    }).catch(err => {
+      if (err.stderr.indexOf("terminal prompts disabled") > -1 && parsed.protocol === "https:") {
+        context.host.down.subscribe((message: any) => {
+          if (message.tid !== tid) {
+            return;
+          }
+
+          const match = Msg.match(message);
+
+          match(Msg.VCS.VCSCredentialAnswer, () => {
+            if (message.host !== parsed.host) {
+              return;
+            }
+
+            context.clone(message.token);
+          });
+        });
+
+        return context.host.up.next(new VCS.VCSCredentialChallenge(tid, context.host.url));
+      }
+    });
+  };
 }

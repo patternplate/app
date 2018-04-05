@@ -88,10 +88,6 @@ export class ProjectViewModel {
     return this.model.path;
   }
 
-  @computed get managed() {
-    return this.model.managed;
-  }
-
   @computed get up() {
     return this.model.up;
   }
@@ -116,11 +112,6 @@ export class ProjectViewModel {
       const match = Msg.match(message);
 
       match(Msg.Project.ProjectAnalyseResponse, () => {
-        if (!this.model.managed) {
-          this.setState(ProjectViewState.Built);
-          return;
-        }
-
         if (message.synced) {
           this.setState(ProjectViewState.Fetched);
         }
@@ -340,7 +331,11 @@ export class ProjectViewModel {
   }
 
   clone() {
-    this.model.process();
+    this.model.clone();
+  }
+
+  sync() {
+    this.model.sync();
   }
 
   start(opts?: {open: boolean}) {
@@ -392,7 +387,7 @@ export class ProjectViewModel {
         this.setEditable(false);
 
         if (changed) {
-          this.model.process();
+          this.model.clone();
         }
 
         this.up.next(new Msg.Project.ProjectSaveNotification(tid, this.model));

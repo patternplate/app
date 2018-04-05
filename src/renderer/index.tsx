@@ -243,8 +243,7 @@ const selectItems = (project: ProjectViewModel, paths: {userData: string}): any[
         label: "Stop",
         click: () => project.stop()
       },
-    project.isWorking() &&
-      project.managed && {
+    project.isWorking() && {
         label: "Abort",
         click: () => {}
       },
@@ -253,14 +252,13 @@ const selectItems = (project: ProjectViewModel, paths: {userData: string}): any[
     },
     !project.isWorking() &&
       !project.inTransition() && {
-        label: project.managed ? "Remove" : "Unlist",
+        label: "Remove",
         click: () => project.remove()
       },
     !project.inTransition() &&
-      !project.isWorking() &&
-      project.managed && {
-        label: "Force sync",
-        click: () => project.clone()
+      !project.isWorking() && {
+        label: "Sync",
+        click: () => project.sync()
       },
     {
       type: "separator"

@@ -6,7 +6,7 @@ import * as svg from "../util/svg";
 
 import { ProjectViewModel, ProjectViewState } from "../view-models";
 
-const { keyframes, styled, Icon } = require("@patternplate/components");
+const { keyframes, styled, Icon, Text } = require("@patternplate/components");
 const { Animated } = require("@marionebl/react-web-animation");
 
 export interface ProjectViewProps {
@@ -101,9 +101,7 @@ export class ProjectView extends React.Component<ProjectViewProps> {
                 readOnly={props.project.editable !== true}
                 value={props.project.inputUrl || props.project.url || ""}
               />
-              {props.project.editable &&
-                <button type="submit" style={{display: "none"}}/>
-              }
+              <button hidden type="submit" disabled={!props.project.editable}/>
             </ProjectProperties>
             <MoreButton onClick={(e) => {
               const tid = uuid.v4();
@@ -188,6 +186,7 @@ const ProjectTileBar = styled.div`
   padding: 10px 15px;
   width: 100%;
   box-shadow: 0 -1px 2px rgba(0, 0, 0, .05);
+  min-height: 80px;
 `;
 
 const ProjectTilePreview = styled.div`

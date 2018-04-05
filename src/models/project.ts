@@ -23,7 +23,6 @@ export interface ProjectInit {
   path: string;
   url: string;
   previous: { [key: string]: any } | null;
-  managed: boolean;
 }
 
 export interface ProjectInput {
@@ -46,7 +45,6 @@ export class Project implements Channel {
   public readonly vcs: VersionControl;
   public readonly modules: Modules<Project>;
   public readonly previous: any;
-  public readonly managed: boolean;
   public readonly basePath: string;
 
   public readonly up: Subject<any> = new Subject();
@@ -59,8 +57,7 @@ export class Project implements Channel {
       path: Path.join(opts.basePath, uuid.v4()),
       name: "",
       previous: null,
-      autoStart: true,
-      managed: true
+      autoStart: true
     });
   }
 
@@ -77,8 +74,7 @@ export class Project implements Channel {
       basePath: opts.basePath,
       path: Path.join(opts.basePath, parsed.full_name.split("/").join(Path.sep)),
       previous: null,
-      autoStart: opts.autoStart,
-      managed: true
+      autoStart: opts.autoStart
     });
   }
 
@@ -90,8 +86,7 @@ export class Project implements Channel {
       path: Path.join(options.basePath, parsed.full_name.split("/").join(Path.sep)),
       name: parsed.full_name,
       previous: null,
-      autoStart: options.autoStart,
-      managed: true
+      autoStart: options.autoStart
     });
   }
 
@@ -102,8 +97,7 @@ export class Project implements Channel {
       basePath: options.basePath,
       name: "",
       previous: null,
-      autoStart: options.autoStart,
-      managed: false
+      autoStart: options.autoStart
     });
   }
 
@@ -115,7 +109,6 @@ export class Project implements Channel {
     this.modules = new Modules(this);
     this.previous = init.previous;
     this.name = init.name;
-    this.managed = init.managed;
     this.basePath = init.basePath;
 
     if (typeof init.autoStart === "boolean") {
@@ -124,7 +117,7 @@ export class Project implements Channel {
 
     this.down.subscribe((message: any) => {
       const match = Msg.match(message);
-      match(Msg.Project.ProjectProcessRequest, () => this.process());
+      match(Msg.Project.ProjectProcessRequest, () => this.clone());
       match(Msg.Project.ProjectInstallRequest, () => this.install());
       match(Msg.Project.ProjectConfigureRequest, () => this.configure());
       match(Msg.Project.ProjectBuildRequest, () => this.build());
@@ -169,9 +162,9 @@ export class Project implements Channel {
         this.setConfig(config);
       });
 
-      match(Msg.Modules.ModulesStartStartedNotification, () => {
-        if (message.open) {
-          this.up.next(new Msg.Project.ProjectOpenRequest(message.tid, this.id));
+      match(Msg.VCS.VCSFetchEndNotification, () => {
+        if (message.diff.length > 0) {
+          console.log("!");
         }
       });
 
@@ -185,17 +178,23 @@ export class Project implements Channel {
           this.down.next(new Msg.Project.ProjectBuildRequest(this.id, this));
         }, 0);
       });
+
+      match(Msg.Modules.ModulesStartStartedNotification, () => {
+        if (message.open) {
+          this.up.next(new Msg.Project.ProjectOpenRequest(message.tid, this.id));
+        }
+      });
     });
   }
 
-  process() {
+  clone() {
     this.down.next(new Msg.VCS.VCSCloneRequest(this.id, {
       url: this.url,
       path: this.path
     }));
   }
 
-  fetch() {
+  sync() {
     this.down.next(new Msg.VCS.VCSFetchRequest(this.id));
   }
 
@@ -238,12 +237,7 @@ export class Project implements Channel {
   }
 
   remove() {
-    if (this.managed) {
-      this.down.next(new Msg.VCS.VCSRemoveRequest(this.id));
-    } else {
-      this.up.next(new Msg.VCS.VCSRemoveEndNotification(this.id));
-      this.up.next(new Msg.VCS.VCSRemoveResponse(this.id, this.id));
-    }
+    this.down.next(new Msg.VCS.VCSRemoveRequest(this.id));
   }
 
   setUrl(url: string) {

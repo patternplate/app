@@ -42,8 +42,7 @@ export class ProjectViewCollection {
             path: data.model.path,
             basePath: options.basePath,
             autoStart: options.autoStart,
-            previous: data,
-            managed: data.model.managed
+            previous: data
           });
           return new ProjectViewModel(project);
         })
