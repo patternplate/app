@@ -12,9 +12,9 @@ const sander = require("@marionebl/sander");
 const realpath = Util.promisify(Fs.realpath);
 
 async function main(cli) {
-  const bins = (cli.bin || []).map(b => ({type: "bin", bin: b}));
-  const mods = (cli.mod || []).map(m => ({type: "module", id: m}));
-  const ignore = (cli.ignore || []);
+  const bins = ensureArray(cli.bin).map(b => ({type: "bin", bin: b}));
+  const mods = ensureArray(cli.mod).map(m => ({type: "module", id: m}));
+  const ignore = ensureArray(cli.ignore);
 
   const out = cli.out;
 
@@ -49,6 +49,13 @@ async function main(cli) {
   }));
 }
 
+function ensureArray(input) {
+  if (typeof input === "undefined") {
+    return [];
+  }
+  return Array.isArray(input) ? input : [input];
+}
+
 async function analyse(subject, context) {
   if (subject.type === "bin") {
     const binPath = await which(subject.bin, {path: context.PATH});
@@ -79,7 +86,6 @@ async function schedule(subject, context, tasks) {
 
   return Promise.all(ids.map(async id => {
     if (ignore.includes(id)) {
-      console.log(subject.id, "=>", id);
       return;
     }
 

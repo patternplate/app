@@ -3,7 +3,6 @@ appId: com.patternplate.app
 productName: patternplate
 npmRebuild: false
 extraResources:
-  - bin
   -
     from: local_modules
     to: node_modules
