@@ -205,7 +205,6 @@ export class Git<T extends VersionControllable> implements VersionControl {
       parsed.auth = ['oauth2', token].join(':');
     }
 
-    const url = Url.format(parsed);
     const git = authorizingGit({context: this, tid});
 
     await git(["fetch", "-a"], {cwd: this.host.path});

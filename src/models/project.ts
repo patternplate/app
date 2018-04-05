@@ -164,7 +164,7 @@ export class Project implements Channel {
 
       match(Msg.VCS.VCSFetchEndNotification, () => {
         if (message.diff.length > 0) {
-          console.log("!");
+          setTimeout(() => this.down.next(new Msg.Project.ProjectInstallRequest(this.id, this)), 0);
         }
       });
 
