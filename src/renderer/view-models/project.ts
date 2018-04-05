@@ -71,6 +71,7 @@ export class ProjectViewModel {
   @observable port: number = 0;
   @observable editable: boolean = false;
   @observable screenshot: string = "";
+  @observable diff: string[] = [];
 
   @computed get id() {
     return this.model.id;
@@ -112,6 +113,8 @@ export class ProjectViewModel {
       const match = Msg.match(message);
 
       match(Msg.Project.ProjectAnalyseResponse, () => {
+        this.setDiff(message.diff);
+
         if (message.synced) {
           this.setState(ProjectViewState.Fetched);
         }
@@ -326,6 +329,10 @@ export class ProjectViewModel {
     this.screenshot = screenshot;
   }
 
+  @action setDiff(diff: string[]) {
+    this.diff = diff;
+  }
+
   analyse() {
     this.model.analyse();
   }
@@ -335,6 +342,7 @@ export class ProjectViewModel {
   }
 
   sync() {
+    this.setDiff([]);
     this.model.sync();
   }
 

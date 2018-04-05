@@ -90,6 +90,9 @@ export class Git<T extends VersionControllable> implements VersionControl {
       }));
     }
 
+    const git = authorizingGit({context: this, tid: this.host.id});
+    await git(["fetch", "origin/master"], {cwd: this.host.path});
+
     // TODO: Fetch here
     const diffResult = await execa(GIT, ["log", "master..origin/master", "--oneline", "--format=format:%H"], {
       cwd: this.host.path,
@@ -206,8 +209,7 @@ export class Git<T extends VersionControllable> implements VersionControl {
     }
 
     const git = authorizingGit({context: this, tid});
-
-    await git(["fetch", "-a"], {cwd: this.host.path});
+    await git(["remote", "update"], {cwd: this.host.path});
 
     const result = await execa(GIT, ["log", "master..origin/master", "--oneline", "--format=format:%H"], {
       cwd: this.host.path,
@@ -225,7 +227,7 @@ export class Git<T extends VersionControllable> implements VersionControl {
       return this.host.up.next(new VCS.VCSFetchEndNotification(tid, {
         url: this.host.url,
         path: this.host.path,
-        diff
+        diff: []
       }));
     }
 
@@ -233,7 +235,7 @@ export class Git<T extends VersionControllable> implements VersionControl {
       .catch((err: Error) => {
         this.host.up.next(new VCS.VCSErrorNotification(tid, err));
       })
-      .then(() => {
+      .then((result) => {
         this.host.up.next(new VCS.VCSFetchEndNotification(tid, {
           url: this.host.url,
           path: this.host.path,

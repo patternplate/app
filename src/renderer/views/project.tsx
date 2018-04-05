@@ -83,6 +83,18 @@ export class ProjectView extends React.Component<ProjectViewProps> {
           keyframes={WIGGLE}
           onDoubleClick={props.onDoubleClick}
         >
+          {
+            props.project.diff.length > 0 &&
+              <UpdateButton
+                onClick={(e: React.MouseEvent<HTMLElement>) => {
+                  e.stopPropagation();
+                  props.project.sync();
+                }}
+                onDoubleClick={(e: React.MouseEvent<HTMLElement>) => e.stopPropagation()}
+                >
+                Pull {props.project.diff.length} {props.project.diff.length === 1 ? "update" : "updates"}
+              </UpdateButton>
+          }
           <ProjectTilePreview src={props.project.screenshot ? `http://localhost:${props.port}/${props.project.screenshot}` : null}/>
           <ProjectTileBar>
             <ProjectIcon
@@ -103,10 +115,13 @@ export class ProjectView extends React.Component<ProjectViewProps> {
               />
               <button hidden type="submit" disabled={!props.project.editable}/>
             </ProjectProperties>
-            <MoreButton onClick={(e) => {
-              const tid = uuid.v4();
-              this.props.project.up.next(new Msg.UI.ContextMenuResponse(tid, this.props.project));
-            }}/>
+            <MoreButton
+              onDoubleClick={(e: React.MouseEvent<HTMLElement>) => e.stopPropagation()}
+              onClick={(e: React.MouseEvent<HTMLElement>) => {
+                e.stopPropagation();
+                const tid = uuid.v4();
+                this.props.project.up.next(new Msg.UI.ContextMenuResponse(tid, this.props.project));
+              }}/>
           </ProjectTileBar>
         </ProjectTile>
       </form>
@@ -148,10 +163,11 @@ const getPhase = (state: ProjectViewState): string => {
 
 interface MoreButtonProps {
   onClick: React.MouseEventHandler<HTMLElement>;
+  onDoubleClick: React.MouseEventHandler<HTMLElement>;
 }
 
 const MoreButton = (props: MoreButtonProps) => (
-  <StyledMoreButton onClick={props.onClick}>
+  <StyledMoreButton onDoubleClick={props.onDoubleClick} onClick={props.onClick}>
     <MoreIcon viewBox="0 0 66 66">
       <circle cx="33" cy="15.2" r="5.9"/>
       <circle cx="33" cy="33" r="5.9"/>
@@ -395,5 +411,24 @@ const StyledPropertyInput = styled.input`
   &:focus {
     outline: none;
     border: ${(props: any) => props.readOnly ? "1.5px dashed transparent" : "1.5px dashed #999"};
+  }
+`;
+
+const UpdateButton = styled.button`
+  position: absolute;
+  top: -1px;
+  right: 30px;
+  z-index: 1;
+  font-size: 13px;
+  padding: 5px 10px;
+  border: 1px solid white;
+  box-shadow: 0 0 2px rgba(0, 0, 0, .05);
+  color: #fff;
+  background: #b3009b;
+  user-select: none;
+  border-radius: 0 0 1.5px 1.5px;
+  cursor: pointer;
+  &:focus {
+    outline: none;
   }
 `;
