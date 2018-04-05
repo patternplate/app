@@ -5,4 +5,7 @@ matrix:
       language: node_js
       node_js: "8"
 script:
-  - cross-env CSC_LINK=file://patternplate-app.p12 yarn build
+  - >-
+    ./.travis/decrypt.sh &&
+    ./.travis/build.sh &&
+    ./.travis/publish.sh
