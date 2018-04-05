@@ -9,6 +9,7 @@ yarn electron-webpack prod
   --bin yarn \
   --bin patternplate \
   --bin get-port \
-  --out local_modules
+  --out local_modules \
+  --ignore electron
 
 CSC_IDENTITY_AUTO_DISCOVERY=false yarn electron-builder --dir

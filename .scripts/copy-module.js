@@ -14,6 +14,8 @@ const realpath = Util.promisify(Fs.realpath);
 async function main(cli) {
   const bins = (cli.bin || []).map(b => ({type: "bin", bin: b}));
   const mods = (cli.mod || []).map(m => ({type: "module", id: m}));
+  const ignore = (cli.ignore || []);
+
   const out = cli.out;
 
   if (typeof out !== "string") {
@@ -29,8 +31,8 @@ async function main(cli) {
   const tasks = [];
 
   await Promise.all(subjects.map(async subject => {
-    await analyse(subject, {PATH, cwd});
-    await schedule(subject, {PATH, cwd}, tasks);
+    await analyse(subject, {PATH, ignore, cwd});
+    await schedule(subject, {PATH, ignore, cwd}, tasks);
   }));
 
   await Promise.all(tasks.map(async task => {
@@ -68,6 +70,7 @@ async function analyse(subject, context) {
 }
 
 async function schedule(subject, context, tasks) {
+  const {ignore} = context;
   tasks.push(subject);
 
   const ids = Object.keys(subject.pkg.dependencies || {});
@@ -75,7 +78,12 @@ async function schedule(subject, context, tasks) {
   const PATH = findNodeModules({ cwd, relative: false });
 
   return Promise.all(ids.map(async id => {
-    const dep = await analyse({type: "module", id}, {cwd, PATH});
+    if (ignore.includes(id)) {
+      console.log(subject.id, "=>", id);
+      return;
+    }
+
+    const dep = await analyse({type: "module", id}, {cwd, ignore, PATH});
 
     // Skip packages that already have been visited
     if (tasks.some(t => t.pkgPath === dep.pkgPath)) {
@@ -87,7 +95,7 @@ async function schedule(subject, context, tasks) {
       return;
     }
 
-    await schedule(dep, {cwd, PATH}, tasks);
+    await schedule(dep, {cwd, ignore, PATH}, tasks);
   }));
 }
 
