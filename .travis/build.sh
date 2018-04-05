@@ -10,6 +10,7 @@ yarn electron-webpack prod
   --bin patternplate \
   --bin get-port \
   --out local_modules \
+  --mod electron-screenshot-service \
   --ignore electron
 
 yarn electron-builder
