@@ -13,5 +13,5 @@ yarn electron-webpack prod
   --mod electron-screenshot-service \
   --ignore electron
 
-yarn electron-builder
+travis_wait yarn electron-builder
 
