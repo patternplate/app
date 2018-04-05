@@ -4,7 +4,7 @@
   "description": "A shared space for system design and engineering.",
   "main": "./dist/main/main.js",
   "scripts": {
-    "build": "electron-webpack prod && electron-builder",
+    "build": "./.scripts/build.sh",
     "start": "electron-webpack dev"
   },
   "repository": "https://github.com/electron/electron-quick-start-typescript",
@@ -45,14 +45,15 @@
     "tslint": "^5.9.1",
     "tslint-config-prettier": "^1.10.0",
     "typescript": "^2.6.2",
-    "webpack": "3"
+    "webpack": "3",
+    "yargs-parser": "^10.0.0"
   },
   "dependencies": {
     "@marionebl/react-web-animation": "0.7.2",
     "@marionebl/sander": "^0.6.1",
-    "@patternplate/cli": "^2.0.4",
-    "@patternplate/components": "^2.0.0",
-    "@patternplate/load-config": "^2.0.0",
+    "@patternplate/cli": "^2.0.8",
+    "@patternplate/components": "^2.0.8",
+    "@patternplate/load-config": "^2.0.8",
     "arson": "^0.2.6",
     "electron-debug": "^1.5.0",
     "electron-oauth-helper": "^2.0.3",
@@ -71,6 +72,7 @@
     "react": "^16.2.0",
     "react-dom": "^16.2.0",
     "read-pkg": "^3.0.0",
+    "read-pkg-up": "^3.0.0",
     "redbox-react": "^1.5.0",
     "resolve-bin": "^0.4.0",
     "resolve-from": "^4.0.0",
@@ -80,6 +82,7 @@
     "source-map-support": "^0.5.4",
     "tempy": "^0.2.1",
     "uuid": "^3.2.1",
+    "which": "^1.3.0",
     "xmldom": "^0.1.27",
     "yarn": "^1.5.1"
   }
