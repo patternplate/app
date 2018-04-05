@@ -2,7 +2,7 @@
 set -e
 set -u
 
-# yarn electron-webpack prod
+yarn electron-webpack prod
 
 ./.scripts/copy-module.js \
   --bin npm \
@@ -12,4 +12,4 @@ set -u
   --out local_modules \
   --ignore electron
 
-# CSC_IDENTITY_AUTO_DISCOVERY=false yarn electron-builder --dir
+CSC_IDENTITY_AUTO_DISCOVERY=false yarn electron-builder --dir
