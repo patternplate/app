@@ -243,10 +243,6 @@ const selectItems = (project: ProjectViewModel, paths: {userData: string}): any[
         label: "Stop",
         click: () => project.stop()
       },
-    project.isWorking() && {
-        label: "Abort",
-        click: () => {}
-      },
     {
       type: "separator"
     },
