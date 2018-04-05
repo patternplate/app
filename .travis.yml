@@ -7,5 +7,5 @@ matrix:
 script:
   - >-
     ./.travis/decrypt.sh &&
-    travis_wait ./.travis/build.sh &&
+    ./.travis/build.sh &&
     ./.travis/publish.sh

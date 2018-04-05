@@ -11,4 +11,4 @@ yarn electron-webpack prod
   --bin get-port \
   --out local_modules
 
-CSC_IDENTITY_AUTO_DISCOVERY=false yarn electron-builder --dir
+travis-wait "CSC_IDENTITY_AUTO_DISCOVERY=false yarn electron-builder --dir"
