@@ -57,7 +57,13 @@ export class Modules<T extends Installable> {
     const id = uuid.v4();
     this.host.up.next(new Msg.Modules.ModulesInstallStartNotification(id));
 
-    const cp = ChildProcess.fork(this.installer(), ["install", "--verbose"], {
+    const runArgs: string[] = [
+      "install",
+      "--verbose",
+      ...(this.installer() === NPM ? ["--scripts-prepend-node-path", "auto"] : [])
+    ].filter(Boolean);
+
+    const cp = ChildProcess.fork(this.installer(), runArgs, {
       cwd: this.host.path,
       stdio: ["ipc", "pipe", "pipe"]
     });
@@ -109,7 +115,13 @@ export class Modules<T extends Installable> {
       ? "patternplate:build"
       : "build";
 
-    const cp = ChildProcess.fork(this.installer(), ["run", runScript], {
+    const runArgs: string[] = [
+      "run",
+      runScript,
+      ...(this.installer() === NPM ? ["--scripts-prepend-node-path", "auto"] : [])
+    ].filter(Boolean);
+
+    const cp = ChildProcess.fork(this.installer(), runArgs, {
       cwd: this.host.path,
       stdio: ["ipc", "pipe", "pipe"]
     });
@@ -137,12 +149,10 @@ export class Modules<T extends Installable> {
     getPort()
       .catch((err: Error) => {
         // TODO: Emit cricital error here
-        console.error(err);
+        console.error({err});
       })
       .then((port) => {
         if (typeof port !== "number") {
-          // TODO: Emit cricital error here
-          console.error("Failed to get open port");
           return;
         }
 
@@ -234,21 +244,39 @@ export class Modules<T extends Installable> {
 function getPort() {
   return new Promise((resolve, reject) => {
     const cp = ChildProcess.fork(GET_PORT, [], {
-      stdio: ["ipc", "pipe", "pipe"]
+      stdio: ["pipe", "pipe", "pipe", "ipc"]
     });
 
     let stdout = "";
+    let stderr = "";
 
     cp.stdout.on("data", (data) => {
       stdout += data;
     });
 
-    cp.on("exit", (code) => {
+    cp.stderr.on("data", (data) => {
+      stderr += data;
+    });
+
+    cp.once("error", () => {
+      const err = new Error("get-port failed");
+      (err as any).stdout = stdout;
+      (err as any).stderr = stderr;
+      return reject(err);
+    });
+
+    const onEnd = (code: number) => {
       if (code !== 0) {
-        reject(new Error("get-port failed"));
+        const err = new Error("get-port failed");
+        (err as any).stdout = stdout;
+        (err as any).stderr = stderr;
+        return reject(err);
       }
       resolve(Number(stdout));
-    });
+    };
+
+    cp.on("close", onEnd);
+    cp.on("exit", onEnd);
   });
 }
 

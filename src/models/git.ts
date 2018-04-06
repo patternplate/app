@@ -8,8 +8,6 @@ import * as Msg from "../messages";
 import {VCS} from "../messages";
 import {Channel} from "./nextable";
 
-declare var __static: string;
-
 const sander = require("@marionebl/sander");
 const gitUrlParse = require("git-url-parse");
 
@@ -32,7 +30,7 @@ export interface VersionControllable extends Channel {
 
 const PREFIX = require("find-up").sync("node_modules", {cwd: __dirname});
 const RIMRAF = Path.join(PREFIX, ".bin", "rimraf");
-const GIT = Path.join((__static), "git", "macos", "bin", "git");
+const GIT = Path.join((process as any).resourcesPath, "static", "git", "macos", "bin", "git");
 const GIT_EXEC_PATH = Path.dirname(GIT);
 const GIT_TERMINAL_PROMPT = "0";
 

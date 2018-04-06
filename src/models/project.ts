@@ -7,13 +7,11 @@ import { Git, VersionControl } from "./git";
 import { Modules } from "./modules";
 import { Channel } from "./nextable";
 
-declare var __static: string;
-
 const execa = require("execa");
 const gitUrlParse = require("git-url-parse");
 const sander = require("@marionebl/sander");
 
-const SCREENSHOT = Path.join(__static, "screenshot.js");
+const SCREENSHOT = Path.join((process as any).resourcesPath, "static", "screenshot.js");
 
 export interface ProjectInit {
   autoStart?: boolean;

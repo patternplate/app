@@ -2,7 +2,7 @@
 set -e
 set -u
 
-yarn electron-webpack prod
+yarn electron-webpack prod --env.minify=false
 
 ./.scripts/copy-module.js \
   --bin npm \
