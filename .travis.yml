@@ -13,4 +13,4 @@ script:
     cd local_modules &&
     gtar -cf ../local_modules.tar . &&
     cd - &&
-    yarn electron-builder
+    yarn electron-builder --publish=always
