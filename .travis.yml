@@ -8,7 +8,8 @@ before_install:
   - brew install gnu-tar
 script:
   - >-
-    ./.travis/decrypt.sh &&
+    . ./.travis/decrypt.sh &&
+    export GH_TOKEN=$(cat patternplate-publish.key) &&
     yarn electron-webpack prod &&
     ./.scripts/copy-module.js --bin npm --bin yarn --bin patternplate --bin get-port --out local_modules --mod electron-screenshot-service --ignore electron &&
     cd local_modules &&

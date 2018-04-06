@@ -13,4 +13,3 @@ openssl aes-256-cbc \
   -in patternplate-publish.key.enc \
   -out patternplate-publish.key -d
 
-export GH_TOKEN=$(cat patternplate-publish.key)
