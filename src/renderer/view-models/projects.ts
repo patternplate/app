@@ -155,6 +155,13 @@ export class ProjectViewCollection {
         }
       });
 
+      match(Msg.Project.ProjectUnlistRequest, () => {
+        const project = this.items.find(item => item.id === message.id);
+        if (project) {
+          this.removeProject(project);
+        }
+      });
+
       match(Msg.Project.ProjectSaveRequest, () => {
         const project = this.items.find(item => item.url === message.project.url);
 

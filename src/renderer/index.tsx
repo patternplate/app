@@ -246,16 +246,21 @@ const selectItems = (project: ProjectViewModel, paths: {userData: string}): any[
     {
       type: "separator"
     },
+    !project.inTransition() &&
+    !project.isWorking() && {
+      label: "Sync",
+      click: () => project.sync()
+    },
+    !project.isWorking() &&
+    !project.inTransition() && {
+      label: "Clear from list",
+      click: () => project.unlist()
+    },
     !project.isWorking() &&
       !project.inTransition() && {
-        label: "Remove",
+        label: "Remove from disk",
         click: () => project.remove()
-      },
-    !project.inTransition() &&
-      !project.isWorking() && {
-        label: "Sync",
-        click: () => project.sync()
-      },
+    },
     {
       type: "separator"
     },

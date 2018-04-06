@@ -19,3 +19,4 @@ export {ProjectReadResponse} from "./project-read-response";
 export {ProjectOpenRequest} from "./project-open-request";
 export {ProjectScreenshotRequest} from "./project-screenshot-request";
 export {ProjectScreenshotNotification} from "./project-screenshot-notification";
+export {ProjectUnlistRequest} from "./project-unlist-request";

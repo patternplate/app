@@ -362,6 +362,11 @@ export class ProjectViewModel {
     this.model.remove();
   }
 
+  unlist() {
+    const tid = uuid.v4();
+    this.up.next(new Msg.Project.ProjectUnlistRequest(tid, this.id))
+  }
+
   @action save(opts: {basePath: string, autoStart: boolean}) {
     if (!this.inputUrl) {
       return;
