@@ -1,6 +1,6 @@
 {
   "name": "@patternplate/app",
-  "version": "1.0.0-1",
+  "version": "1.0.0-alpha",
   "description": "A shared space for system design and engineering.",
   "main": "./dist/main/main.js",
   "scripts": {

@@ -8,7 +8,5 @@ extraResources:
     to: node_modules.tar
 directories:
   output: "app"
-dmg:
-  format: UDRO
 mac:
   target: dmg
