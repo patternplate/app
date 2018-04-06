@@ -1,23 +1,33 @@
 import { app, dialog, screen, BrowserWindow, Menu, ipcMain } from "electron";
 import * as Path from "path";
 import * as Url from "url";
+import * as tar from "tar-fs";
+import * as Fs from "fs";
+
+const sander = require("@marionebl/sander");
+const log = require("electron-log");
 
 require("electron-debug")({ enabled: true });
-const isDevelopment = process.env.NODE_ENV !== 'production'
+const isDevelopment = process.env.NODE_ENV !== "production";
 
 let mainWindow: Electron.BrowserWindow | null;
 
-async function createWindow() {
+log.transports.file.level = "info";
+log.transports.console.level = "info";
 
+async function createWindow() {
   try {
     const installExtension = require("electron-devtools-installer").default;
-    const {REACT_DEVELOPER_TOOLS} = require("electron-devtools-installer");
-    installExtension(REACT_DEVELOPER_TOOLS)
+    const { REACT_DEVELOPER_TOOLS } = require("electron-devtools-installer");
+    installExtension(REACT_DEVELOPER_TOOLS);
   } catch (err) {
     console.warn(err);
   }
 
-  const { width = 1280, height = 800 } = screen.getPrimaryDisplay().workAreaSize;
+  const {
+    width = 1280,
+    height = 800
+  } = screen.getPrimaryDisplay().workAreaSize;
 
   // Create the browser window.
   mainWindow = new BrowserWindow({
@@ -30,14 +40,20 @@ async function createWindow() {
   });
 
   if (isDevelopment && process.env.ELECTRON_WEBPACK_WDS_PORT) {
-    mainWindow.loadURL(`http://localhost:${process.env.ELECTRON_WEBPACK_WDS_PORT}`)
+    mainWindow.loadURL(
+      `http://localhost:${process.env.ELECTRON_WEBPACK_WDS_PORT}`
+    );
   } else {
-    mainWindow.loadURL(Url.format({
-      pathname: Path.join(__dirname, 'index.html'),
-      protocol: 'file',
-      slashes: true
-    }))
+    mainWindow.loadURL(
+      Url.format({
+        pathname: Path.join(__dirname, "index.html"),
+        protocol: "file",
+        slashes: true
+      })
+    );
   }
+
+  unpackModules();
 
   // Open the DevTools.
   if (process.env.NODE_ENV === "development") {
@@ -54,130 +70,176 @@ async function createWindow() {
 }
 
 function createMenu() {
-  Menu.setApplicationMenu(Menu.buildFromTemplate([
-    {
-      label: "patternplate",
-      submenu: [
-        ({
-          label: "About patternplate",
-          selector: "orderFrontStandardAboutPanel:"
-        } as any),
-        {
-          label: "Check for updates ...",
-        },
-        {
-          type: "separator"
-        },
-        {
-          label: "Hide",
-          accelerator: "Command+H",
-          click: () => {
-            const win = BrowserWindow.getFocusedWindow();
-            if (win) {
-              win.hide();
+  Menu.setApplicationMenu(
+    Menu.buildFromTemplate([
+      {
+        label: "patternplate",
+        submenu: [
+          {
+            label: "About patternplate",
+            selector: "orderFrontStandardAboutPanel:"
+          } as any,
+          {
+            label: "Check for updates ..."
+          },
+          {
+            type: "separator"
+          },
+          {
+            label: "Hide",
+            accelerator: "Command+H",
+            click: () => {
+              const win = BrowserWindow.getFocusedWindow();
+              if (win) {
+                win.hide();
+              }
+            }
+          },
+          {
+            type: "separator"
+          },
+          {
+            label: "Quit patternplate",
+            accelerator: "Command+Q",
+            click: () => {
+              app.quit();
             }
           }
-        },
-        {
-          type: "separator"
-        },
-        {
-          label: "Quit patternplate",
-          accelerator: "Command+Q",
-          click: () => {
-            app.quit();
-          }
-        }
-      ]
-    },
-    {
-      label: "Library",
-      submenu: [
-        {
-          label: "New library",
-          accelerator: "Command+N",
-          click: () => {
-            const win = BrowserWindow.getFocusedWindow();
-            if (win) {
-              win.webContents.send("menu-request-new");
+        ]
+      },
+      {
+        label: "Library",
+        submenu: [
+          {
+            label: "New library",
+            accelerator: "Command+N",
+            click: () => {
+              const win = BrowserWindow.getFocusedWindow();
+              if (win) {
+                win.webContents.send("menu-request-new");
+              }
             }
+          },
+          {
+            label: "Open",
+            accelerator: "Command+O",
+            click: () => openFromFs()
           }
-        },
-        {
-          label: "Open",
-          accelerator: "Command+O",
-          click: () => openFromFs()
-        }
-      ]
-    },
-    {
-      label: "Edit",
-      submenu: [
-        {
-          label: "Undo",
-          accelerator: "CmdOrCtrl+Z",
-          selector: "undo:"
-        },
-        {
-          label: "Redo",
-          accelerator: "Shift+CmdOrCtrl+Z",
-          selector: "redo:"
-        },
-        {
-          type: "separator"
-        },
-        {
-          label: "Cut",
-          accelerator: "CmdOrCtrl+X",
-          selector: "cut:"
-        },
-        {
-          label: "Copy",
-          accelerator: "CmdOrCtrl+C",
-          selector: "copy:"
-        },
-        {
-          label: "Paste",
-          accelerator: "CmdOrCtrl+V",
-          selector: "paste:"
-        },
-        {
-          label: "Select All",
-          accelerator: "CmdOrCtrl+A",
-          selector: "selectAll:"
-        }
-      ]
-    }
-  ]));
+        ]
+      },
+      {
+        label: "Edit",
+        submenu: [
+          {
+            label: "Undo",
+            accelerator: "CmdOrCtrl+Z",
+            selector: "undo:"
+          },
+          {
+            label: "Redo",
+            accelerator: "Shift+CmdOrCtrl+Z",
+            selector: "redo:"
+          },
+          {
+            type: "separator"
+          },
+          {
+            label: "Cut",
+            accelerator: "CmdOrCtrl+X",
+            selector: "cut:"
+          },
+          {
+            label: "Copy",
+            accelerator: "CmdOrCtrl+C",
+            selector: "copy:"
+          },
+          {
+            label: "Paste",
+            accelerator: "CmdOrCtrl+V",
+            selector: "paste:"
+          },
+          {
+            label: "Select All",
+            accelerator: "CmdOrCtrl+A",
+            selector: "selectAll:"
+          }
+        ]
+      }
+    ])
+  );
 }
 
 const openFromFs = () => {
   const win = BrowserWindow.getFocusedWindow();
   if (win) {
-    dialog.showOpenDialog({
-      title: "Open from Disk",
-      buttonLabel: "Open Library",
-      properties: [
-        "openDirectory"
-      ]
-    }, (selectedPaths: string[]) => {
-      if (!Array.isArray(selectedPaths)) {
-        return;
-      }
+    dialog.showOpenDialog(
+      {
+        title: "Open from Disk",
+        buttonLabel: "Open Library",
+        properties: ["openDirectory"]
+      },
+      (selectedPaths: string[]) => {
+        if (!Array.isArray(selectedPaths)) {
+          return;
+        }
 
-      const [path] = selectedPaths;
+        const [path] = selectedPaths;
 
-      if (path) {
-        win.webContents.send("menu-request-open-from-fs", path);
+        if (path) {
+          win.webContents.send("menu-request-open-from-fs", path);
+        }
       }
-    });
+    );
   }
+};
+
+function unpack(from: string, to: string) {
+  return new Promise((resolve, reject) => {
+    Fs.createReadStream(from)
+      .pipe(tar.extract(to))
+      .on("end", () => resolve())
+      .on("error", reject);
+  });
 }
+
+const unpackModules = async () => {
+  const archivePath = Path.join(
+    (process as any).resourcesPath,
+    "node_modules.tar"
+  );
+  const targetPath = Path.join((process as any).resourcesPath, "node_modules");
+  const hasArchive = await sander.exists(archivePath);
+
+  if (!hasArchive) {
+    log.info(`No archive at ${archivePath}, skipping.`);
+    return;
+  }
+
+  log.info(`Unpacking from ${archivePath} to ${targetPath} ...`);
+
+  await unpack(archivePath, targetPath)
+    .catch(err => {
+      log.error(err);
+    });
+
+  log.info(`Unpacked to ${targetPath} ...`);
+
+  log(`Removing ${archivePath}`);
+
+  sander
+    .rimraf(archivePath)
+    .then(() => {
+      log.info(`Removed ${archivePath}`);
+    })
+    .catch((err: Error) => {
+      log.error(err);
+    });
+};
 
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
-app.on("ready", () => {
+app.on("ready", async () => {
   createMenu();
   createWindow();
   ipcMain.on("open-from-fs", () => openFromFs());

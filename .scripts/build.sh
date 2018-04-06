@@ -13,4 +13,8 @@ yarn electron-webpack prod
   --mod electron-screenshot-service \
   --ignore electron
 
+cd local_modules
+gtar -cf ../local_modules.tar .
+cd -
+
 CSC_IDENTITY_AUTO_DISCOVERY=false yarn electron-builder --dir

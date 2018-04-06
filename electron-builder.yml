@@ -4,8 +4,8 @@ productName: patternplate
 npmRebuild: false
 extraResources:
   -
-    from: local_modules
-    to: node_modules
+    from: local_modules.tar
+    to: node_modules.tar
 directories:
   output: "app"
 dmg:

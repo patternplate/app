@@ -1,5 +1,6 @@
 node_modules
 local_modules
+local_modules.tar
 dist
 *.log
 app

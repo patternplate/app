@@ -4,9 +4,14 @@ matrix:
       osx_image: xcode9.2
       language: node_js
       node_js: "8"
+before_install:
+  - brew install gnu-tar
 script:
   - >-
     ./.travis/decrypt.sh &&
     yarn electron-webpack prod &&
     ./.scripts/copy-module.js --bin npm --bin yarn --bin patternplate --bin get-port --out local_modules --mod electron-screenshot-service --ignore electron &&
+    cd local_modules &&
+    gtar -cf ../local_modules.tar . &&
+    cd - &&
     yarn electron-builder
