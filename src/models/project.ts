@@ -1,6 +1,7 @@
 import * as Path from "path";
 import { Subject } from "rxjs";
 import * as uuid from "uuid";
+import {BehaviorSubject} from "rxjs";
 
 import * as Msg from "../messages";
 import { Git, VersionControl } from "./git";
@@ -10,8 +11,6 @@ import { Channel } from "./nextable";
 const execa = require("execa");
 const gitUrlParse = require("git-url-parse");
 const sander = require("@marionebl/sander");
-
-const SCREENSHOT = Path.join((process as any).resourcesPath, "static", "screenshot.js");
 
 export interface ProjectInit {
   autoStart?: boolean;
@@ -47,6 +46,8 @@ export class Project implements Channel {
 
   public readonly up: Subject<any> = new Subject();
   public readonly down: Subject<any> = new Subject();
+
+  private appReady: BehaviorSubject<boolean> = new BehaviorSubject(false);
 
   static createEmpty(opts: ProjectOptions): Project {
     return new Project({
@@ -112,6 +113,16 @@ export class Project implements Channel {
     if (typeof init.autoStart === "boolean") {
       this.autoStart = init.autoStart;
     }
+
+    this.down
+      .filter(Msg.App.AppMessage.is)
+      .map((message: any) => {
+        if (Msg.App.ModulesUnpackReady.is(message)) {
+          return true;
+        }
+        return false;
+      })
+      .subscribe(this.appReady);
 
     this.down.subscribe((message: any) => {
       const match = Msg.match(message);
@@ -252,23 +263,36 @@ export class Project implements Channel {
   }
 
   async screenshot() {
-    const screenshotPath = Path.join(this.basePath, `screenshots`, `${this.id}.png`);
+    const SCREENSHOT = Path.join(this.basePath, "node", "bin", "screenshot.js");
+    const screenshotPath = Path.join(this.basePath, "screenshots", `${this.id}.png`);
     const buildPath = Path.join(this.basePath, `builds`, this.id);
 
     const image = Path.basename(screenshotPath);
     const payload = {image, project: this.id};
 
+    const message = new Msg.Project.ProjectScreenshotNotification(this.id, payload);
+
+    if (!this.appReady.getValue()) {
+      this.up.next(new Msg.App.ModulesTaskDeferred(this.id, message));
+      this.appReady
+        .skipWhile((val) => !val)
+        .subscribe(() => {
+          this.screenshot();
+        });
+      return;
+    }
+
     if (await sander.exists(screenshotPath)) {
-      return this.up.next(new Msg.Project.ProjectScreenshotNotification(this.id, payload));
+      return this.up.next(message);
     }
 
     if (await sander.exists(buildPath)) {
       await execa(SCREENSHOT, [buildPath, screenshotPath]);
-      return this.up.next(new Msg.Project.ProjectScreenshotNotification(this.id, payload));
+      return this.up.next(message);
     }
 
     await this.modules.getBuild(buildPath);
     await execa(SCREENSHOT, [buildPath, screenshotPath]);
-    this.up.next(new Msg.Project.ProjectScreenshotNotification(this.id, payload));
+    this.up.next(message);
   }
 }

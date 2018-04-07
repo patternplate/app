@@ -8,6 +8,7 @@ const findNodeModules = require("find-node-modules");
 const whichNodeback = require("which");
 const readPkgUp = require("read-pkg-up");
 const sander = require("@marionebl/sander");
+const pncp = Util.promisify(require("ncp").ncp);
 
 const realpath = Util.promisify(Fs.realpath);
 
@@ -26,7 +27,8 @@ async function main(cli) {
   const subjects = [...bins, ...mods];
 
   const cwd = cli.cwd || process.cwd();
-  const PATH = findNodeModules({ cwd, relative: false }).map(p => Path.join(p, ".bin")).join(":");
+  const modulePaths = findNodeModules({ cwd, relative: false });
+  const PATH = modulePaths.map(p => Path.join(p, ".bin")).join(":");
 
   const tasks = [];
 
@@ -36,7 +38,15 @@ async function main(cli) {
   }));
 
   await Promise.all(tasks.map(async task => {
-    await sander.copydir(task.pkgPath).to(out, task.pkg.name.split("/").join(Path.sep));
+    const rootPath = modulePaths.find(m => task.pkgPath.startsWith(m));
+    const outPath = Path.join(out, Path.relative(rootPath, task.pkgPath));
+    await sander.mkdir(outPath);
+
+    await pncp(task.pkgPath, outPath, {
+      filter(filename) {
+        return Path.relative(task.pkgPath, filename).indexOf("node_modules") === -1;
+      }
+    });
 
     if (task.type === "bin") {
       const internalPath = Path.relative(task.pkgPath, task.binTarget);
@@ -93,11 +103,6 @@ async function schedule(subject, context, tasks) {
 
     // Skip packages that already have been visited
     if (tasks.some(t => t.pkgPath === dep.pkgPath)) {
-      return;
-    }
-
-    // Skip nested module trees, we'll copy in one go
-    if (dep.pkgPath.startsWith(Path.join(subject.pkgPath, 'node_modules'))) {
       return;
     }
 

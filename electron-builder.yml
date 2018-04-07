@@ -3,15 +3,8 @@ appId: com.patternplate.app
 productName: patternplate
 npmRebuild: false
 extraResources:
-  -
-    from: src
-    to: src
-  -
-    from: local_modules.tar
-    to: node_modules.tar
-  -
-    from: static
-    to: static
+  - node_modules.tar
+  - static
 directories:
   output: "app"
 mac:

@@ -6,6 +6,7 @@ import { Project, ProjectOptions } from "../../models/project";
 import { ProjectViewModel, ProjectViewState } from "./project";
 
 const ARSON = require("arson");
+const electron = require("electron");
 
 export interface ProjectViewCollectionInit {
   store: any;
@@ -193,6 +194,9 @@ export class ProjectViewCollection {
     this.down.subscribe((message: any) => {
       console.log('down', message);
     });
+
+    // TODO: Wire this up in renderer/index.tsx instead
+    electron.ipcRenderer.send("check-modules");
   }
 
   broadcast(payload: any) {

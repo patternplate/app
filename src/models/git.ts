@@ -3,6 +3,7 @@ import * as Url from "url";
 import * as uuid from "uuid";
 import * as execa from "execa";
 import * as loadJsonFile from "load-json-file";
+import {BehaviorSubject} from "rxjs";
 
 import * as Msg from "../messages";
 import {VCS} from "../messages";
@@ -25,20 +26,34 @@ export interface VersionControl {
 export interface VersionControllable extends Channel {
   id: string;
   path: string;
+  basePath: string;
   url: string;
 }
 
-const PREFIX = require("find-up").sync("node_modules", {cwd: __dirname});
-const RIMRAF = Path.join(PREFIX, ".bin", "rimraf");
-const GIT = Path.join((process as any).resourcesPath, "static", "git", "macos", "bin", "git");
+const STATIC_BASE = process.env.NODE_ENV === "production"
+  ? (process as any).resourcesPath
+  : Path.resolve(__dirname, '..', '..');
+
+const GIT = Path.join(STATIC_BASE, "static", "git", "macos", "bin", "git");
 const GIT_EXEC_PATH = Path.dirname(GIT);
 const GIT_TERMINAL_PROMPT = "0";
 
 export class Git<T extends VersionControllable> implements VersionControl {
   readonly host: T;
+  private appReady: BehaviorSubject<boolean> = new BehaviorSubject(false);
 
   constructor(host: T) {
     this.host = host;
+
+    this.host.down
+      .filter(Msg.App.AppMessage.is)
+      .map((message: any) => {
+        if (Msg.App.ModulesUnpackReady.is(message)) {
+          return true;
+        }
+        return false;
+      })
+      .subscribe(this.appReady);
 
     this.host.down.subscribe((message: any) => {
       const match = Msg.match(message);
@@ -243,12 +258,21 @@ export class Git<T extends VersionControllable> implements VersionControl {
   }
 
   remove() {
+    const RIMRAF = Path.join(this.host.basePath, "node", "node_modules", ".bin", "rimraf");
+
     if (!this.host.path || this.host.path === process.cwd()) {
       this.host.up.next(new VCS.VCSRemoveResponse(this.host.id, (this.host as any).id));
       return;
     }
 
     this.host.up.next(new VCS.VCSRemoveStartNotification(this.host.id));
+
+    if (!this.appReady.getValue()) {
+      this.appReady
+        .skipWhile((val) => !val)
+        .subscribe(() => this.remove());
+      return;
+    }
 
     execa(RIMRAF, [this.host.path])
       .catch(err => {

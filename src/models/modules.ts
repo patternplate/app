@@ -4,6 +4,7 @@ import * as ChildProcess from "child_process";
 import * as uuid from "uuid";
 import * as semver from "semver";
 import * as loadJsonFile from "load-json-file";
+import {BehaviorSubject} from "rxjs";
 
 import {Channel} from "./nextable";
 import * as Msg from "../messages";
@@ -12,18 +13,9 @@ const ARSON = require("arson");
 const readPkg = require("read-pkg");
 const loadConfig = require("@patternplate/load-config");
 const resolveFrom = require("resolve-from");
-
-const PREFIX = require("find-up").sync("node_modules", {cwd: __dirname});
-
-require("yarn/package");
-require("npm/package");
-require("@patternplate/cli/package");
-require("get-port-cli/package");
-
-const YARN = Path.join(PREFIX, ".bin", "yarn");
-const NPM = Path.join(PREFIX, ".bin", "npm");
-const PATTERNPLATE = Path.join(PREFIX, ".bin", "patternplate");
-const GET_PORT = Path.join(PREFIX, ".bin", "get-port");
+const getPort = require("get-port");
+const execa = require("execa");
+const resolveGlobal = require("resolve-global");
 
 export interface Installable extends Channel {
   id: string;
@@ -35,9 +27,21 @@ export class Modules<T extends Installable> {
   public readonly host: T;
 
   private cp: ChildProcess.ChildProcess | null = null;
+  private appReady: BehaviorSubject<boolean>;
 
   public constructor(host: T) {
     this.host = host;
+    this.appReady = new BehaviorSubject(false);
+
+    this.host.down
+      .filter(Msg.App.AppMessage.is)
+      .map((message: any) => {
+        if (Msg.App.ModulesUnpackReady.is(message)) {
+          return true;
+        }
+        return false;
+      })
+      .subscribe(this.appReady);
 
     this.host.down.subscribe((message: any) => {
       const match = Msg.match(message);
@@ -50,12 +54,26 @@ export class Modules<T extends Installable> {
   }
 
   private installer() {
+    const YARN = resolveGlobal.silent("yarn") || Path.join(this.host.basePath, "node", "node_modules", ".bin", "yarn");
+    const NPM = resolveGlobal.silent("npm") || Path.join(this.host.basePath, "node", "node_modules", ".bin", "npm");
+
     return Fs.existsSync(Path.join(this.host.path, "yarn.lock")) ? YARN : NPM;
   }
 
   private install() {
+    const NPM = Path.join(this.host.basePath, "node", "node_modules", ".bin", "npm");
+
     const id = uuid.v4();
-    this.host.up.next(new Msg.Modules.ModulesInstallStartNotification(id));
+    const message = new Msg.Modules.ModulesInstallStartNotification(id);
+    this.host.up.next(message);
+
+    if (!this.appReady.getValue()) {
+      this.host.up.next(new Msg.App.ModulesTaskDeferred(id, message));
+      this.appReady
+        .skipWhile((val) => !val)
+        .subscribe(() => this.install());
+      return;
+    }
 
     const runArgs: string[] = [
       "install",
@@ -63,29 +81,24 @@ export class Modules<T extends Installable> {
       ...(this.installer() === NPM ? ["--scripts-prepend-node-path", "auto"] : [])
     ].filter(Boolean);
 
-    const cp = ChildProcess.fork(this.installer(), runArgs, {
-      cwd: this.host.path,
-      stdio: ["ipc", "pipe", "pipe"]
-    });
+    const cp = execa("yarn", runArgs);
 
-    cp.stderr.on("data", (data) => {
+    cp.stderr.on("data", (data: Buffer) => {
       console.log(String(data));
     });
 
-    cp.stdout.on("data", (data) => {
+    cp.stdout.on("data", (data: Buffer) => {
       console.log(String(data));
     });
 
-    const onEnd = (code: number) => {
-      if (code !== 0) {
+    cp
+      .then(() => {
+        this.host.up.next(new Msg.Modules.ModulesInstallEndNotification(id));
+      })
+      .catch((err: Error) => {
+        console.error(err);
         return this.host.up.next(new Msg.Modules.ModulesInstallErrorNotification(id));
-      }
-
-      this.host.up.next(new Msg.Modules.ModulesInstallEndNotification(id));
-    }
-
-    cp.once("close", onEnd);
-    cp.once("exit", onEnd);
+      });
   }
 
   private configure() {
@@ -102,9 +115,20 @@ export class Modules<T extends Installable> {
 
   private build() {
     const id = uuid.v4();
-    this.host.up.next(new Msg.Modules.ModulesBuildStartNotification(id));
+    const message = new Msg.Modules.ModulesBuildStartNotification(id);
+    this.host.up.next(message);
+
+    if (!this.appReady.getValue()) {
+      this.host.up.next(new Msg.App.ModulesTaskDeferred(id, message));
+      this.appReady
+        .skipWhile((val) => !val)
+        .subscribe(() => this.build());
+      return;
+    }
+
     const pkg = readPkg.sync(this.host.path);
     const scripts = pkg.scripts || {};
+    const NPM = Path.join(this.host.basePath, "node", "node_modules", ".bin", "npm");
 
     if (!scripts.hasOwnProperty("build") && !scripts.hasOwnProperty("patternplate:build")) {
       this.host.up.next(new Msg.Modules.ModulesBuildEndNotification(id));
@@ -144,22 +168,27 @@ export class Modules<T extends Installable> {
 
   private start(request: Msg.Modules.ModulesStartRequest) {
     const id = uuid.v4();
-    this.host.up.next(new Msg.Modules.ModulesStartStartNotification(id));
+    const PATTERNPLATE = Path.join(this.host.basePath, "node", "node_modules", ".bin", "patternplate");
+    const message = new Msg.Modules.ModulesStartStartNotification(id);
+    this.host.up.next(message);
+
+    if (!this.appReady.getValue()) {
+      this.host.up.next(new Msg.App.ModulesTaskDeferred(id, message));
+      this.appReady
+        .skipWhile((val) => !val)
+        .subscribe(() => {
+          this.start(request);
+        });
+      return;
+    }
 
     getPort()
-      .catch((err: Error) => {
-        // TODO: Emit cricital error here
-        console.error({err});
-      })
-      .then((port) => {
-        if (typeof port !== "number") {
-          return;
-        }
-
+      .then((port: number) => {
         this.host.up.next(new Msg.Modules.ModulesStartPortNotification(id, port));
 
         const pp = getExectuable({
-          cwd: this.host.path
+          cwd: this.host.path,
+          PATTERNPLATE
         });
 
         this.cp = ChildProcess.fork(pp, [
@@ -204,6 +233,9 @@ export class Modules<T extends Installable> {
           this.host.up.next(new Msg.Modules.ModulesStartErrorNotification(id));
           console.error(`patternplate start failed: `, err);
         });
+      })
+      .catch((err: Error) => {
+        console.error(err);
       });
   }
 
@@ -219,7 +251,8 @@ export class Modules<T extends Installable> {
   }
 
   public getBuild(buildPath: string): Promise<string> {
-    const pp = getExectuable({ cwd: this.host.path });
+    const PATTERNPLATE = Path.join(this.host.basePath, "node", "node_modules", ".bin", "patternplate");
+    const pp = getExectuable({ cwd: this.host.path, PATTERNPLATE });
 
     const cp = ChildProcess.fork(pp, ["build", "--base", "/", "--out", buildPath, "--cwd", this.host.path], {
       stdio: ["pipe", "inherit", "inherit", "ipc"],
@@ -241,50 +274,12 @@ export class Modules<T extends Installable> {
   }
 }
 
-function getPort() {
-  return new Promise((resolve, reject) => {
-    const cp = ChildProcess.fork(GET_PORT, [], {
-      stdio: ["pipe", "pipe", "pipe", "ipc"]
-    });
-
-    let stdout = "";
-    let stderr = "";
-
-    cp.stdout.on("data", (data) => {
-      stdout += data;
-    });
-
-    cp.stderr.on("data", (data) => {
-      stderr += data;
-    });
-
-    cp.once("error", () => {
-      const err = new Error("get-port failed");
-      (err as any).stdout = stdout;
-      (err as any).stderr = stderr;
-      return reject(err);
-    });
-
-    const onEnd = (code: number) => {
-      if (code !== 0) {
-        const err = new Error("get-port failed");
-        (err as any).stdout = stdout;
-        (err as any).stderr = stderr;
-        return reject(err);
-      }
-      resolve(Number(stdout));
-    };
-
-    cp.on("close", onEnd);
-    cp.on("exit", onEnd);
-  });
-}
-
 interface ExecOpts {
   cwd: string;
+  PATTERNPLATE: string;
 }
 
-function getExectuable({cwd}: ExecOpts): string {
+function getExectuable({cwd, PATTERNPLATE}: ExecOpts): string {
   const resolved = resolveFrom.silent(cwd, "@patternplate/cli/package");
 
   if (!resolved) {

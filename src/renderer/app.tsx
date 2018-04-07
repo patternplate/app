@@ -6,7 +6,7 @@ import { ProjectsView } from "./views/projects";
 import { WebView } from "./views/webview";
 import { ProjectTab } from "./views/project-tab";
 
-import { ProjectViewCollection, StartViewModel } from "./view-models";
+import { AppViewModel, ProjectViewCollection, StartViewModel } from "./view-models";
 
 const { observer, inject } = require("mobx-react");
 const {
@@ -19,6 +19,7 @@ const {
 const electron = require("electron");
 
 interface InjectedAppProps {
+  app: AppViewModel;
   start: StartViewModel;
   projects: ProjectViewCollection;
   paths: {
@@ -26,7 +27,7 @@ interface InjectedAppProps {
   }
 }
 
-@inject("start", "projects", "paths")
+@inject("start", "projects", "paths", "app")
 @observer
 export class App extends React.Component {
   render() {

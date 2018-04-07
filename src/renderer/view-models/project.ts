@@ -347,10 +347,18 @@ export class ProjectViewModel {
   }
 
   start(opts?: {open: boolean}) {
+    if (this.lt(ProjectViewState.Built)) {
+      return this.setHighlighted();
+    }
+
     this.model.start(opts);
   }
 
   open() {
+    if (this.lt(ProjectViewState.Started)) {
+      return this.setHighlighted();
+    }
+
     this.model.open();
   }
 

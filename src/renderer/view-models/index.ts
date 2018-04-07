@@ -1,3 +1,4 @@
-export {ProjectViewModel, ProjectViewState} from "./project";
-export {ProjectViewCollection} from "./projects";
-export {StartViewModel} from "./start";
+export * from "./app";
+export * from "./project";
+export * from "./projects";
+export * from "./start";

@@ -12,9 +12,6 @@ const isDevelopment = process.env.NODE_ENV !== "production";
 
 let mainWindow: Electron.BrowserWindow | null;
 
-log.transports.file.level = "info";
-log.transports.console.level = "info";
-
 async function createWindow() {
   try {
     const installExtension = require("electron-devtools-installer").default;
@@ -52,8 +49,6 @@ async function createWindow() {
       })
     );
   }
-
-  unpackModules();
 
   // Open the DevTools.
   if (process.env.NODE_ENV === "development") {
@@ -197,39 +192,56 @@ function unpack(from: string, to: string) {
   return new Promise((resolve, reject) => {
     Fs.createReadStream(from)
       .pipe(tar.extract(to))
-      .on("end", () => resolve())
+      .on("finish", () => resolve())
       .on("error", reject);
   });
 }
 
 const unpackModules = async () => {
-  const archivePath = Path.join(
-    (process as any).resourcesPath,
-    "node_modules.tar"
-  );
-  const targetPath = Path.join((process as any).resourcesPath, "node_modules");
+  const send = (channel: string, payload?: any) => {
+    const wins = BrowserWindow.getAllWindows();
+    wins.forEach(win => {
+      win.webContents.send(channel, payload);
+    });
+  }
+
+  const archivePath = process.env.NODE_ENV === "production"
+    ? Path.join((process as any).resourcesPath, "node_modules.tar")
+    : Path.join(__dirname, "..", "..", "node_modules.tar");
+
+  const userData = app.getPath("userData");
+  const targetPath = Path.join(userData, "node", "node_modules");
   const hasArchive = await sander.exists(archivePath);
 
   if (!hasArchive) {
-    log.info(`No archive at ${archivePath}, skipping.`);
+    send("modules-ready");
+    log.warn(`No archive at ${archivePath}, skipping.`);
     return;
   }
 
-  log.info(`Unpacking from ${archivePath} to ${targetPath} ...`);
+  send("modules-start");
+  log.warn(`Unpacking from ${archivePath} to ${targetPath} ...`);
 
-  await unpack(archivePath, targetPath)
-    .catch(err => {
-      log.error(err);
-    });
+  await sander.rimraf(targetPath);
 
-  log.info(`Unpacked to ${targetPath} ...`);
+  try {
+    await sander.mkdir(targetPath);
+    await unpack(archivePath, targetPath);
+  } catch (err) {
+    console.error(err);
+    send("modules-error", err);
+    return;
+  }
 
-  log(`Removing ${archivePath}`);
+  send("modules-ready");
+  log.warn(`Unpacked to ${targetPath}`);
+
+  log.warn(`Removing ${archivePath}`);
 
   sander
     .rimraf(archivePath)
     .then(() => {
-      log.info(`Removed ${archivePath}`);
+      log.warn(`Removed ${archivePath}`);
     })
     .catch((err: Error) => {
       log.error(err);
@@ -240,8 +252,16 @@ const unpackModules = async () => {
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.on("ready", async () => {
+  const staticPath = process.env.NODE_ENV === "production"
+    ? Path.resolve((process as any).resourcesPath, "static")
+    : Path.resolve(__dirname, "..", "..", "static");
+
+  const targetPath = Path.join(app.getPath("userData"), "node", "bin");
+  await sander.copydir(staticPath, "node", "bin").to(targetPath);
+
   createMenu();
   createWindow();
+  ipcMain.on("check-modules", () => unpackModules());
   ipcMain.on("open-from-fs", () => openFromFs());
 });
 

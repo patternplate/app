@@ -11,6 +11,8 @@ import * as Msg from "../messages";
 import config from "../config";
 
 import {
+  AppViewModel,
+  AppModulesState,
   ProjectViewModel,
   StartViewModel,
   ProjectViewCollection
@@ -59,6 +61,7 @@ async function main() {
   server.use(express.static(Path.join(userData, "screenshots")));
   server.listen(port, () => {});
 
+  const app = new AppViewModel();
   const start = StartViewModel.fromStore(store);
   const projects = ProjectViewCollection.fromStore(store, {
     autoStart: false,
@@ -119,6 +122,27 @@ async function main() {
     }
   );
 
+  electron.ipcRenderer.on("modules-start", () => {
+    app.setModulesState(AppModulesState.Started);
+    const tid = uuid.v4();
+    projects.broadcast(new Msg.App.ModulesUnpackStarted(tid));
+  });
+
+  electron.ipcRenderer.on("modules-error", (e: any, err: any) => {
+    console.error(err);
+    app.setModulesState(AppModulesState.Error);
+    const tid = uuid.v4();
+    projects.broadcast(new Msg.App.ModulesUnpackError(tid));
+  });
+
+  electron.ipcRenderer.on("modules-ready", () => {
+    app.setModulesState(AppModulesState.Ready);
+    const tid = uuid.v4();
+    projects.broadcast(new Msg.App.ModulesUnpackReady(tid));
+  });
+
+  electron.ipcRenderer.send("check-modules");
+
   if (process.env.NODE_ENV !== "production") {
     (global as any).start = start;
     (global as any).projects = projects;
@@ -126,7 +150,7 @@ async function main() {
 
   try {
     ReactDOM.render(
-      <Provider start={start} projects={projects} paths={{userData}} port={port}>
+      <Provider app={app} start={start} projects={projects} paths={{userData}} port={port}>
         <App />
       </Provider>,
       el
@@ -139,7 +163,7 @@ async function main() {
     module.hot.accept("./app", () => {
       const NextApp = require("./app").App;
       ReactDOM.render(
-        <Provider start={start} projects={projects} paths={{userData}} port={port}>
+        <Provider app={app} start={start} projects={projects} paths={{userData}} port={port}>
           <NextApp />
         </Provider>,
         el
