@@ -56,6 +56,9 @@ export class ProjectViewCollection {
 
     this.items.forEach(item => this.bind(item));
     this.listen();
+
+    // TODO: Wire this up in renderer/index.tsx instead
+    electron.ipcRenderer.send("check-modules");
   }
 
   @action
@@ -74,6 +77,10 @@ export class ProjectViewCollection {
     this.bind(viewModel);
 
     this.store.set("projects", this.toStore());
+
+    // TODO: Wire this up in renderer/index.tsx instead
+    electron.ipcRenderer.send("check-modules");
+
     return viewModel;
   }
 
@@ -106,6 +113,9 @@ export class ProjectViewCollection {
       });
     });
 
+    // TODO: Wire this up in renderer/index.tsx instead
+    electron.ipcRenderer.send("check-modules");
+
     model.read();
     return viewModel;
   }
@@ -124,12 +134,18 @@ export class ProjectViewCollection {
     this.bind(empty);
     this.listen();
 
+    // TODO: Wire this up in renderer/index.tsx instead
+    electron.ipcRenderer.send("check-modules");
+
     return empty;
   }
 
   @action
   removeProject(removal: ProjectViewModel): void {
     this.items.splice(this.items.indexOf(removal), 1);
+
+    // TODO: Wire this up in renderer/index.tsx instead
+    electron.ipcRenderer.send("check-modules");
 
     this.store.set("projects", this.toStore());
   }
@@ -194,9 +210,6 @@ export class ProjectViewCollection {
     this.down.subscribe((message: any) => {
       console.log('down', message);
     });
-
-    // TODO: Wire this up in renderer/index.tsx instead
-    electron.ipcRenderer.send("check-modules");
   }
 
   broadcast(payload: any) {
