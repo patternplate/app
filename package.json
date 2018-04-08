@@ -54,9 +54,9 @@
   "dependencies": {
     "@marionebl/react-web-animation": "0.7.2",
     "@marionebl/sander": "^0.6.1",
-    "@patternplate/cli": "^2.0.8",
-    "@patternplate/components": "^2.0.8",
-    "@patternplate/load-config": "^2.0.8",
+    "@patternplate/cli": "^2.1.1",
+    "@patternplate/components": "^2.1.1",
+    "@patternplate/load-config": "^2.1.1",
     "@types/tar-fs": "^1.16.0",
     "arson": "^0.2.6",
     "electron-debug": "^1.5.0",

@@ -193,7 +193,13 @@ function unpack(from: string, to: string) {
     Fs.createReadStream(from)
       .pipe(tar.extract(to))
       .on("finish", () => resolve())
-      .on("error", reject);
+      .on("error", (err: any) => {
+        if (err.code === "ENOENT") {
+          console.warn(err);
+          return;
+        }
+        reject(err);
+      });
   });
 }
 

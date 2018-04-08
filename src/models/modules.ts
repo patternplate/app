@@ -2,8 +2,6 @@ import * as Fs from "fs";
 import * as Path from "path";
 import * as ChildProcess from "child_process";
 import * as uuid from "uuid";
-import * as semver from "semver";
-import * as loadJsonFile from "load-json-file";
 import {BehaviorSubject} from "rxjs";
 
 import {Channel} from "./nextable";
@@ -12,10 +10,8 @@ import * as Msg from "../messages";
 const ARSON = require("arson");
 const readPkg = require("read-pkg");
 const loadConfig = require("@patternplate/load-config");
-const resolveFrom = require("resolve-from");
 const getPort = require("get-port");
 const execa = require("execa");
-const resolveGlobal = require("resolve-global");
 
 export interface Installable extends Channel {
   id: string;
@@ -27,6 +23,7 @@ export class Modules<T extends Installable> {
   public readonly host: T;
 
   private cp: ChildProcess.ChildProcess | null = null;
+  private interval: NodeJS.Timer | null = null;
   private appReady: BehaviorSubject<boolean>;
 
   public constructor(host: T) {
@@ -54,14 +51,15 @@ export class Modules<T extends Installable> {
   }
 
   private installer() {
-    const YARN = resolveGlobal.silent("yarn") || Path.join(this.host.basePath, "node", "node_modules", ".bin", "yarn");
-    const NPM = resolveGlobal.silent("npm") || Path.join(this.host.basePath, "node", "node_modules", ".bin", "npm");
+    const YARN = Path.join(this.host.basePath, "node", "node_modules", ".bin", "yarn");
+    const NPM = Path.join(this.host.basePath, "node", "node_modules", ".bin", "npm");
 
     return Fs.existsSync(Path.join(this.host.path, "yarn.lock")) ? YARN : NPM;
   }
 
   private install() {
     const NPM = Path.join(this.host.basePath, "node", "node_modules", ".bin", "npm");
+    const INSTALLER = this.installer();
 
     const id = uuid.v4();
     const message = new Msg.Modules.ModulesInstallStartNotification(id);
@@ -76,18 +74,21 @@ export class Modules<T extends Installable> {
     }
 
     const runArgs: string[] = [
-      "install",
+      ...(INSTALLER === NPM ? ["install"] : []),
       "--verbose",
-      ...(this.installer() === NPM ? ["--scripts-prepend-node-path", "auto"] : [])
+      ...(INSTALLER === NPM ? ["--scripts-prepend-node-path", "auto"] : [])
     ].filter(Boolean);
 
-    const cp = execa("yarn", runArgs);
+    const cp = execa(INSTALLER, runArgs, {
+      cwd: this.host.path,
+      stdio: "pipe"
+    });
 
-    cp.stderr.on("data", (data: Buffer) => {
+    cp.stderr && cp.stderr.on("data", (data: Buffer) => {
       console.log(String(data));
     });
 
-    cp.stdout.on("data", (data: Buffer) => {
+    cp.stdout && cp.stdout.on("data", (data: Buffer) => {
       console.log(String(data));
     });
 
@@ -129,6 +130,7 @@ export class Modules<T extends Installable> {
     const pkg = readPkg.sync(this.host.path);
     const scripts = pkg.scripts || {};
     const NPM = Path.join(this.host.basePath, "node", "node_modules", ".bin", "npm");
+    const INSTALLER = this.installer();
 
     if (!scripts.hasOwnProperty("build") && !scripts.hasOwnProperty("patternplate:build")) {
       this.host.up.next(new Msg.Modules.ModulesBuildEndNotification(id));
@@ -142,12 +144,12 @@ export class Modules<T extends Installable> {
     const runArgs: string[] = [
       "run",
       runScript,
-      ...(this.installer() === NPM ? ["--scripts-prepend-node-path", "auto"] : [])
+      ...(INSTALLER === NPM ? ["--scripts-prepend-node-path", "auto"] : [])
     ].filter(Boolean);
 
-    const cp = ChildProcess.fork(this.installer(), runArgs, {
+    const cp = ChildProcess.fork(INSTALLER, runArgs, {
       cwd: this.host.path,
-      stdio: ["ipc", "pipe", "pipe"]
+      stdio: ["pipe", "pipe", "pipe", "ipc"]
     });
 
     cp.stderr.on("data", (data) => {
@@ -186,16 +188,21 @@ export class Modules<T extends Installable> {
       .then((port: number) => {
         this.host.up.next(new Msg.Modules.ModulesStartPortNotification(id, port));
 
-        const pp = getExectuable({
-          cwd: this.host.path,
-          PATTERNPLATE
-        });
-
-        this.cp = ChildProcess.fork(pp, [
+        this.cp = ChildProcess.fork(PATTERNPLATE, [
           "start", "--port", `${port}`, "--cwd", `${this.host.path}`
         ], {
-          stdio: ["pipe", "pipe", "pipe", "ipc"]
+          cwd: this.host.path,
+          stdio: ["pipe", "pipe", "pipe", "ipc"],
+          env: {
+            NODE_DEBUG: "patternplate"
+          }
         });
+
+        this.interval = setInterval(() => {
+          if (this.cp && typeof this.cp.send === "function" && this.cp.connected) {
+            this.cp.send(JSON.stringify({type: "heartbeat"}));
+          }
+        }, 500);
 
         this.cp.on("message", (envelope: any) => {
           const instance = ARSON.parse(envelope);
@@ -244,17 +251,20 @@ export class Modules<T extends Installable> {
       return;
     }
 
+    if (this.interval) {
+      clearTimeout(this.interval);
+    }
+
     const id = uuid.v4();
     this.host.up.next(new Msg.Modules.ModulesStopNotification(id))
-    this.cp.kill("SIGTERM");
+    this.cp.kill();
     this.host.up.next(new Msg.Modules.ModulesStopEndNotification(id))
   }
 
   public getBuild(buildPath: string): Promise<string> {
     const PATTERNPLATE = Path.join(this.host.basePath, "node", "node_modules", ".bin", "patternplate");
-    const pp = getExectuable({ cwd: this.host.path, PATTERNPLATE });
 
-    const cp = ChildProcess.fork(pp, ["build", "--base", "/", "--out", buildPath, "--cwd", this.host.path], {
+    const cp = ChildProcess.fork(PATTERNPLATE, ["build", "--base", "/", "--out", buildPath, "--cwd", this.host.path], {
       stdio: ["pipe", "inherit", "inherit", "ipc"],
       cwd: this.host.path
     });
@@ -271,41 +281,5 @@ export class Modules<T extends Installable> {
       cp.once("end", onEnd);
       cp.once("close", onEnd);
     });
-  }
-}
-
-interface ExecOpts {
-  cwd: string;
-  PATTERNPLATE: string;
-}
-
-function getExectuable({cwd, PATTERNPLATE}: ExecOpts): string {
-  const resolved = resolveFrom.silent(cwd, "@patternplate/cli/package");
-
-  if (!resolved) {
-    return PATTERNPLATE;
-  }
-
-  const pkg = attempt(resolved);
-
-  if (!pkg) {
-    return PATTERNPLATE;
-  }
-
-  const {version = ''} = pkg;
-
-  if (semver.lt(version, "2.0.4")) {
-    return PATTERNPLATE;
-  }
-
-  return Path.join(Path.dirname(resolved), pkg.bin.patternplate);
-}
-
-function attempt(path: string): any {
-  try {
-    return loadJsonFile.sync(path);
-  } catch (err) {
-    console.error(err);
-    return null;
   }
 }
