@@ -8,6 +8,7 @@ rm -rf local_modules
   --bin yarn \
   --bin patternplate \
   --bin rimraf \
+  --bin node \
   --out local_modules \
   --mod electron-screenshot-service \
   --mod express \

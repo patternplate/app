@@ -44,6 +44,7 @@
     "electron-webpack-ts": "^2.0.0",
     "find-node-modules": "^1.0.4",
     "ncp": "^2.0.0",
+    "node": "^9.11.0",
     "ts-loader": "3",
     "tslint": "^5.9.1",
     "tslint-config-prettier": "^1.10.0",

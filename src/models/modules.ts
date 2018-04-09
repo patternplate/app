@@ -23,6 +23,7 @@ export class Modules<T extends Installable> {
   public readonly host: T;
 
   private cp: Forked | null = null;
+  private watch: Forked | null = null;
   private interval: NodeJS.Timer | null = null;
   private appReady: BehaviorSubject<boolean>;
 
@@ -131,7 +132,7 @@ export class Modules<T extends Installable> {
     const NPM = Path.join(this.host.basePath, "node", "node_modules", ".bin", "npm");
     const INSTALLER = this.installer();
 
-    if (!scripts.hasOwnProperty("build") && !scripts.hasOwnProperty("patternplate:build")) {
+    if (!scripts.hasOwnProperty("patternplate:build")) {
       this.host.up.next(new Msg.Modules.ModulesBuildEndNotification(id));
       return;
     }
@@ -147,8 +148,7 @@ export class Modules<T extends Installable> {
     ].filter(Boolean);
 
     const cp = fork(INSTALLER, runArgs, {
-      cwd: this.host.path,
-      stdio: ["pipe", "pipe", "pipe", "ipc"]
+      cwd: this.host.path
     });
 
     cp.stderr.on("data", (data) => {
@@ -158,7 +158,6 @@ export class Modules<T extends Installable> {
     cp.stdout.on("data", (data) => {
       console.log(String(data));
     });
-
 
     cp.then(({code}) => {
         this.host.up.next(new Msg.Modules.ModulesBuildEndNotification(id));
@@ -171,6 +170,9 @@ export class Modules<T extends Installable> {
   private start(request: Msg.Modules.ModulesStartRequest) {
     const id = uuid.v4();
     const PATTERNPLATE = Path.join(this.host.basePath, "node", "node_modules", ".bin", "patternplate");
+    const NPM = Path.join(this.host.basePath, "node", "node_modules", ".bin", "npm");
+    const INSTALLER = this.installer();
+
     const message = new Msg.Modules.ModulesStartStartNotification(id);
     this.host.up.next(message);
 
@@ -182,6 +184,35 @@ export class Modules<T extends Installable> {
           this.start(request);
         });
       return;
+    }
+
+    const pkg = readPkg.sync(this.host.path);
+    const scripts = pkg.scripts || {};
+
+    if (scripts.hasOwnProperty("patternplate:watch")) {
+      const runArgs: string[] = [
+        "run",
+        "patternplate:watch",
+        ...(INSTALLER === NPM ? ["--scripts-prepend-node-path", "auto"] : [])
+      ].filter(Boolean);
+
+      this.watch = fork(this.installer(), runArgs, {
+        cwd: this.host.path
+      });
+
+      this.watch.stdout.on("data", (data: any) => {
+        console.log(String(data));
+      });
+
+      this.watch.stderr.on("data", (data: any) => {
+        console.log(String(data));
+      });
+
+      this.watch
+        .catch((err) => {
+          console.error(`patternplate:watch failed: `, err);
+          this.host.up.next(new Msg.Modules.ModulesStartErrorNotification(id));
+        });
     }
 
     getPort()
@@ -228,17 +259,11 @@ export class Modules<T extends Installable> {
           stderr.push(String(data));
         });
 
-        this.cp.on("exit", (code) => {
-          if (code && code !== 0) {
+        this.cp
+          .catch((err) => {
+            console.error(`patternplate start failed: `, err);
             this.host.up.next(new Msg.Modules.ModulesStartErrorNotification(id));
-            console.error(`patternplate exited with code ${code}:\n${stderr.join("\n")}`);
-          }
-        });
-
-        this.cp.on("error", (err) => {
-          this.host.up.next(new Msg.Modules.ModulesStartErrorNotification(id));
-          console.error(`patternplate start failed: `, err);
-        });
+          });
       })
       .catch((err: Error) => {
         console.error(err);
@@ -257,6 +282,11 @@ export class Modules<T extends Installable> {
     const id = uuid.v4();
     this.host.up.next(new Msg.Modules.ModulesStopNotification(id))
     this.cp.kill();
+
+    if (this.watch) {
+      this.watch.kill();
+    }
+
     this.host.up.next(new Msg.Modules.ModulesStopEndNotification(id))
   }
 
