@@ -13,11 +13,13 @@ import config from "../config";
 import {
   AppViewModel,
   AppModulesState,
+  AppUpdatesState,
   ProjectViewModel,
   StartViewModel,
   ProjectViewCollection
 } from "./view-models";
 
+const ARSON = require("arson");
 const electron = require("electron");
 const Store = require("electron-store");
 const { injectGlobal } = require("@patternplate/components");
@@ -121,6 +123,33 @@ async function main() {
       });
     }
   );
+
+  electron.ipcRenderer.on("update-message", (_: any, envelope: string) => {
+    const message = ARSON.parse(envelope);
+    console.log("update-message", message);
+
+    switch (message.type) {
+      case "checking-for-update":
+        return app.setUpdateState(AppUpdatesState.Checking)
+      case "update-available":
+        return app.setUpdateState(AppUpdatesState.Available);
+      case "update-not-available": {
+        app.setUpdateState(AppUpdatesState.Unavailable);
+        setTimeout(() => {
+          return app.setUpdateState(AppUpdatesState.Unknown)
+        }, 3000);
+        return;
+      }
+      case "download-progress": {
+        app.setUpdateState(AppUpdatesState.Downloading);
+        return;
+      }
+      case "update-downloaded": {
+        app.setUpdateState(AppUpdatesState.Downloaded);
+        return;
+      }
+    }
+  });
 
   electron.ipcRenderer.on("modules-start", () => {
     app.setModulesState(AppModulesState.Started);

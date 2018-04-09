@@ -9,4 +9,5 @@ extraResources:
 directories:
   output: "app"
 mac:
-  target: dmg
+  target:
+    - dmg

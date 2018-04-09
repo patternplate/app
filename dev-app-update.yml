@@ -1,0 +1,5 @@
+owner: patternplate
+repo: app
+provider: github
+downgrade: true
+version: 0.9.0

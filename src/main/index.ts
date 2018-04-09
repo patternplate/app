@@ -3,14 +3,25 @@ import * as Path from "path";
 import * as Url from "url";
 import * as tar from "tar-fs";
 import * as Fs from "fs";
+import { autoUpdater } from "electron-updater";
 
+const ARSON = require("arson");
 const sander = require("@marionebl/sander");
 const log = require("electron-log");
 
 require("electron-debug")({ enabled: true });
 const isDevelopment = process.env.NODE_ENV !== "production";
 
+autoUpdater.logger = log;
+(autoUpdater as any).logger.transports.file.level = "info";
+
+if (process.env.NODE_ENV !== "production") {
+  autoUpdater.updateConfigPath = Path.resolve(__dirname, "..", "..", "dev-app-update.yml");
+  autoUpdater.allowDowngrade = true;
+}
+
 let mainWindow: Electron.BrowserWindow | null;
+
 let unpacking = false;
 
 async function createWindow() {
@@ -65,6 +76,42 @@ async function createWindow() {
   });
 }
 
+autoUpdater.on("error", err => {
+  if (mainWindow) {
+    mainWindow.webContents.send("update-message", ARSON.stringify({type: "error", payload: err}));
+  }
+});
+
+autoUpdater.on("checking-for-update", () => {
+  if (mainWindow) {
+    mainWindow.webContents.send("update-message", ARSON.stringify({type: "checking-for-update", payload: null}));
+  }
+});
+
+autoUpdater.on("update-available", info => {
+  if (mainWindow) {
+    mainWindow.webContents.send("update-message", ARSON.stringify({type: "update-available", payload: info}));
+  }
+});
+
+autoUpdater.on("update-not-available", info => {
+  if (mainWindow) {
+    mainWindow.webContents.send("update-message", ARSON.stringify({type: "update-not-available", payload: info}));
+  }
+});
+
+autoUpdater.on("download-progress", progress => {
+  if (mainWindow) {
+    mainWindow.webContents.send("update-message", ARSON.stringify({type: "download-progress", payload: progress}));
+  }
+});
+
+autoUpdater.on("update-downloaded", info => {
+  if (mainWindow) {
+    mainWindow.webContents.send("update-message", ARSON.stringify({type: "update-downloaded", payload: info}));
+  }
+});
+
 function createMenu() {
   Menu.setApplicationMenu(
     Menu.buildFromTemplate([
@@ -75,9 +122,12 @@ function createMenu() {
             label: "About patternplate",
             selector: "orderFrontStandardAboutPanel:"
           } as any,
-          {
-            label: "Check for updates ..."
-          },
+          /* {
+            label: "Check for updates ...",
+            click: () => {
+              autoUpdater.checkForUpdates();
+            }
+          }, */
           {
             type: "separator"
           },
@@ -272,6 +322,7 @@ app.on("ready", async () => {
   createMenu();
   createWindow();
   ipcMain.on("check-modules", () => unpackModules());
+  ipcMain.on("check-update", () => autoUpdater.checkForUpdates());
   ipcMain.on("open-from-fs", () => openFromFs());
 });
 

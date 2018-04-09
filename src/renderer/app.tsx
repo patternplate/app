@@ -5,6 +5,7 @@ import { StartView } from "./views/start";
 import { ProjectsView } from "./views/projects";
 import { WebView } from "./views/webview";
 import { ProjectTab } from "./views/project-tab";
+// import { UpdateBadge } from "./views/update-badge";
 
 import { AppViewModel, ProjectViewCollection, StartViewModel } from "./view-models";
 
@@ -60,6 +61,9 @@ export class App extends React.Component {
                 }}
               />
             ))}
+            {/* <ChromeRight>
+              <UpdateBadge/>
+            </ChromeRight> */}
           </Chrome>
           {props.projects.length === 0 && (
             <StartView
@@ -131,6 +135,13 @@ const Chrome = (props: ChromeProps) => {
     </StyledChrome>
   );
 };
+
+/* const ChromeRight = styled.div`
+  display: flex;
+  flex: 0 0 auto;
+  margin-left: auto;
+  height: 100%;
+`; */
 
 const StyledChrome = styled.header`
   box-sizing: border-box;
