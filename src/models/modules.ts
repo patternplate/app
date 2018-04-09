@@ -6,12 +6,12 @@ import {BehaviorSubject} from "rxjs";
 
 import {Channel} from "./nextable";
 import * as Msg from "../messages";
+import {fork, Forked} from "../fork";
 
 const ARSON = require("arson");
 const readPkg = require("read-pkg");
 const loadConfig = require("@patternplate/load-config");
 const getPort = require("get-port");
-const execa = require("execa");
 
 export interface Installable extends Channel {
   id: string;
@@ -22,7 +22,7 @@ export interface Installable extends Channel {
 export class Modules<T extends Installable> {
   public readonly host: T;
 
-  private cp: ChildProcess.ChildProcess | null = null;
+  private cp: Forked | null = null;
   private interval: NodeJS.Timer | null = null;
   private appReady: BehaviorSubject<boolean>;
 
@@ -79,9 +79,8 @@ export class Modules<T extends Installable> {
       ...(INSTALLER === NPM ? ["--scripts-prepend-node-path", "auto"] : [])
     ].filter(Boolean);
 
-    const cp = execa(INSTALLER, runArgs, {
-      cwd: this.host.path,
-      stdio: "pipe"
+    const cp = fork(INSTALLER, runArgs, {
+      cwd: this.host.path
     });
 
     cp.stderr && cp.stderr.on("data", (data: Buffer) => {
@@ -147,7 +146,7 @@ export class Modules<T extends Installable> {
       ...(INSTALLER === NPM ? ["--scripts-prepend-node-path", "auto"] : [])
     ].filter(Boolean);
 
-    const cp = ChildProcess.fork(INSTALLER, runArgs, {
+    const cp = fork(INSTALLER, runArgs, {
       cwd: this.host.path,
       stdio: ["pipe", "pipe", "pipe", "ipc"]
     });
@@ -160,12 +159,13 @@ export class Modules<T extends Installable> {
       console.log(String(data));
     });
 
-    cp.on("exit", (code) => {
-      if (code !== 0) {
-        return this.host.up.next(new Msg.Modules.ModulesBuildErrorNotification(id));
-      }
-      this.host.up.next(new Msg.Modules.ModulesBuildEndNotification(id));
-    });
+
+    cp.then(({code}) => {
+        this.host.up.next(new Msg.Modules.ModulesBuildEndNotification(id));
+      })
+      .catch(err => {
+        this.host.up.next(new Msg.Modules.ModulesBuildErrorNotification(id));
+      });
   }
 
   private start(request: Msg.Modules.ModulesStartRequest) {
@@ -188,11 +188,10 @@ export class Modules<T extends Installable> {
       .then((port: number) => {
         this.host.up.next(new Msg.Modules.ModulesStartPortNotification(id, port));
 
-        this.cp = ChildProcess.fork(PATTERNPLATE, [
+        this.cp = fork(PATTERNPLATE, [
           "start", "--port", `${port}`, "--cwd", `${this.host.path}`
         ], {
           cwd: this.host.path,
-          stdio: ["pipe", "pipe", "pipe", "ipc"],
           env: {
             NODE_DEBUG: "patternplate"
           }

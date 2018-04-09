@@ -1,13 +1,14 @@
 import * as Path from "path";
 import * as Url from "url";
 import * as uuid from "uuid";
-import * as execa from "execa";
 import * as loadJsonFile from "load-json-file";
 import {BehaviorSubject} from "rxjs";
+import * as execa from "execa";
 
 import * as Msg from "../messages";
 import {VCS} from "../messages";
 import {Channel} from "./nextable";
+import {fork} from "../fork";
 
 const sander = require("@marionebl/sander");
 const gitUrlParse = require("git-url-parse");
@@ -274,7 +275,7 @@ export class Git<T extends VersionControllable> implements VersionControl {
       return;
     }
 
-    execa(RIMRAF, [this.host.path])
+    fork(RIMRAF, [this.host.path])
       .catch(err => {
         console.error(err);
         // TODO: Not implemented yet, emit critical errors here
