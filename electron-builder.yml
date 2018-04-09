@@ -4,6 +4,7 @@ productName: patternplate
 npmRebuild: false
 extraResources:
   - node_modules.tar
+  - node_modules.md5
   - static
 directories:
   output: "app"

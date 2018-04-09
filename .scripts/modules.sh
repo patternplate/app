@@ -18,3 +18,6 @@ rm -rf local_modules
 cd local_modules
 gtar -cf ../node_modules.tar .
 cd -
+
+MD5=`md5sum node_modules.tar | awk '{ print $1 }'`
+echo $MD5 > node_modules.md5

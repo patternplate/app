@@ -11,6 +11,7 @@ require("electron-debug")({ enabled: true });
 const isDevelopment = process.env.NODE_ENV !== "production";
 
 let mainWindow: Electron.BrowserWindow | null;
+let unpacking = false;
 
 async function createWindow() {
   try {
@@ -211,19 +212,31 @@ const unpackModules = async () => {
     });
   }
 
-  const archivePath = process.env.NODE_ENV === "production"
-    ? Path.join((process as any).resourcesPath, "node_modules.tar")
-    : Path.join(__dirname, "..", "..", "node_modules.tar");
+  const sourcePath = process.env.NODE_ENV === "production"
+    ? (process as any).resourcesPath
+    : Path.join(__dirname, "..", "..");
+
+  const archivePath = Path.join(sourcePath, "node_modules.tar");
+  const sumPath = Path.join(sourcePath, "node_modules.md5");
+  const sourceSum = String(await sander.readFile(sumPath));
 
   const userData = app.getPath("userData");
   const targetPath = Path.join(userData, "node", "node_modules");
-  const hasArchive = await sander.exists(archivePath);
+  const targetSumPath = Path.join(userData, "node", "node_modules.md5");
+  const hasTargetSum = await sander.exists(targetSumPath);
+  const targetSum = hasTargetSum ? String(await sander.readFile(targetSumPath)) : null;
 
-  if (!hasArchive) {
+  if (sourceSum === targetSum) {
     send("modules-ready");
-    log.warn(`No archive at ${archivePath}, skipping.`);
+    log.warn(`checksums at ${sumPath} and ${targetSumPath} (${targetSum}) match, nothing to copy.`);
     return;
   }
+
+  if (unpacking) {
+    return;
+  }
+
+  unpacking = true;
 
   send("modules-start");
   log.warn(`Unpacking from ${archivePath} to ${targetPath} ...`);
@@ -236,22 +249,17 @@ const unpackModules = async () => {
   } catch (err) {
     console.error(err);
     send("modules-error", err);
+    unpacking = false;
+    await sander.rimraf(targetSumPath)
+      .catch(() => {});
     return;
   }
 
   send("modules-ready");
   log.warn(`Unpacked to ${targetPath}`);
 
-  log.warn(`Removing ${archivePath}`);
-
-  sander
-    .rimraf(archivePath)
-    .then(() => {
-      log.warn(`Removed ${archivePath}`);
-    })
-    .catch((err: Error) => {
-      log.error(err);
-    });
+  await sander.copyFile(sumPath).to(targetSumPath);
+  unpacking = false;
 };
 
 // This method will be called when Electron has finished
