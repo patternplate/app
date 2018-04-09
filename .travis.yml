@@ -9,7 +9,5 @@ before_install:
 script:
   - >-
     yarn electron-webpack prod --env.minify=false &&
-    cd node_modules &&
-    gtar -cf ../node_modules.tar . &&
-    cd - &&
+    ./.scripts/modules.sh &&
     yarn electron-builder --publish=always
