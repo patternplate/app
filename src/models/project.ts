@@ -8,9 +8,9 @@ import { Git, VersionControl } from "./git";
 import { Modules } from "./modules";
 import { Channel } from "./nextable";
 
-const execa = require("execa");
 const gitUrlParse = require("git-url-parse");
-const sander = require("@marionebl/sander");
+// const sander = require("@marionebl/sander");
+// const spawn = require("electron-spawn");
 
 export interface ProjectInit {
   autoStart?: boolean;
@@ -263,7 +263,7 @@ export class Project implements Channel {
   }
 
   async screenshot() {
-    const SCREENSHOT = Path.join(this.basePath, "node", "bin", "screenshot.js");
+    /* const SCREENSHOT = Path.join(this.basePath, "node", "bin", "screenshot.js");
     const screenshotPath = Path.join(this.basePath, "screenshots", `${this.id}.png`);
     const buildPath = Path.join(this.basePath, `builds`, this.id);
 
@@ -283,16 +283,43 @@ export class Project implements Channel {
     }
 
     if (await sander.exists(screenshotPath)) {
-      return this.up.next(message);
+      this.up.next(message);
     }
 
-    if (await sander.exists(buildPath)) {
-      await execa(SCREENSHOT, [buildPath, screenshotPath]);
-      return this.up.next(message);
+    if (!await sander.exists(buildPath)) {
+      await this.modules.getBuild(buildPath);
     }
 
-    await this.modules.getBuild(buildPath);
-    await execa(SCREENSHOT, [buildPath, screenshotPath]);
-    this.up.next(message);
+    console.log(SCREENSHOT);
+    await getScreenshot(SCREENSHOT, buildPath, screenshotPath);
+    this.up.next(message); */
   }
 }
+
+/* function getScreenshot(BIN: string, from: string, to: string) {
+  return new Promise((resolve, reject) => {
+    const cp = spawn(BIN, from, to, {
+      stdio: "pipe"
+    });
+
+    cp.stdout.on("data", (data: Buffer) => {
+      console.log(String(data));
+    });
+
+    cp.stderr.on("data", (data: Buffer) => {
+      console.log(String(data));
+    });
+
+    const onEnd = (code: number) => {
+      if (code === 0) {
+        resolve();
+      } else {
+        reject();
+      }
+    };
+
+    cp.once("error", reject);
+    cp.on("close", onEnd);
+    cp.on("end", onEnd);
+  });
+} */

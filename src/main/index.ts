@@ -216,6 +216,9 @@ const unpackModules = async () => {
     ? (process as any).resourcesPath
     : Path.join(__dirname, "..", "..");
 
+  const staticTargetPath = Path.join(app.getPath("userData"), "node", "bin");
+  await sander.copydir(Path.resolve(sourcePath, "static", "node", "bin")).to(staticTargetPath);
+
   const archivePath = Path.join(sourcePath, "node_modules.tar");
   const sumPath = Path.join(sourcePath, "node_modules.md5");
   const sourceSum = String(await sander.readFile(sumPath));
@@ -266,13 +269,6 @@ const unpackModules = async () => {
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.on("ready", async () => {
-  const staticPath = process.env.NODE_ENV === "production"
-    ? Path.resolve((process as any).resourcesPath, "static")
-    : Path.resolve(__dirname, "..", "..", "static");
-
-  const targetPath = Path.join(app.getPath("userData"), "node", "bin");
-  await sander.copydir(staticPath, "node", "bin").to(targetPath);
-
   createMenu();
   createWindow();
   ipcMain.on("check-modules", () => unpackModules());

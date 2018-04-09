@@ -8,6 +8,8 @@ async function main(input) {
   const path = input[0];
   const output = input[1];
 
+  console.log({path, output});
+
   const port = await getPort();
 
   const app = express();
