@@ -1,3 +1,4 @@
+import * as Path from "path";
 import * as React from "react";
 
 import * as Msg from "../messages";
@@ -84,7 +85,7 @@ export class App extends React.Component {
                 e.preventDefault();
                 const project = props.projects.addProjectByUrl(
                   props.start.input,
-                  { autoStart: true, basePath: props.paths.userData }
+                  { autoStart: true, basePath: Path.join(props.paths.userData) }
                 );
 
                 if (project) {

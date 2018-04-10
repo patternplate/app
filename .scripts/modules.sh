@@ -10,7 +10,7 @@ rm -rf local_modules
   --bin rimraf \
   --bin node \
   --out local_modules \
-  --mod electron-screenshot-service \
+  --mod puppeteer \
   --mod express \
   --mod get-port \
   --mod @marionebl/sander \

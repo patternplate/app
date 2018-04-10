@@ -27,6 +27,7 @@ export class Modules<T extends Installable> {
   private watch?: Forked;
   private interval?: NodeJS.Timer;
   private appReady: BehaviorSubject<boolean>;
+  private stopped: boolean = false;
 
   public constructor(host: T) {
     this.host = host;
@@ -204,6 +205,8 @@ export class Modules<T extends Installable> {
     const pkg = readPkg.sync(this.host.path);
     const scripts = pkg.scripts || {};
 
+    this.stopped = false;
+
     if (scripts.hasOwnProperty("patternplate:watch") || scripts.hasOwnProperty("watch")) {
       const runScript = scripts.hasOwnProperty("patternplate:watch")
         ? "patternplate:watch"
@@ -233,8 +236,10 @@ export class Modules<T extends Installable> {
 
       this.watch && this.watch
         .catch((err) => {
-          console.error(`patternplate:watch failed: `, err);
-          this.host.up.next(new Msg.Modules.ModulesStartErrorNotification(id));
+          if (!this.stopped) {
+            console.error(`patternplate:watch failed: `, err);
+            this.host.up.next(new Msg.Modules.ModulesStartErrorNotification(id));
+          }
         });
     }
 
@@ -287,8 +292,10 @@ export class Modules<T extends Installable> {
 
         this.cp && this.cp
           .catch((err) => {
-            console.error(`patternplate start failed: `, err);
-            this.host.up.next(new Msg.Modules.ModulesStartErrorNotification(id));
+            if (!this.stopped) {
+              console.error(`patternplate start failed: `, err);
+              this.host.up.next(new Msg.Modules.ModulesStartErrorNotification(id));
+            }
           });
       })
       .catch((err: Error) => {
@@ -297,9 +304,7 @@ export class Modules<T extends Installable> {
   }
 
   private stop() {
-    if (!this.cp) {
-      return;
-    }
+    this.stopped = true;
 
     if (this.interval) {
       clearTimeout(this.interval);
@@ -307,7 +312,10 @@ export class Modules<T extends Installable> {
 
     const id = uuid.v4();
     this.host.up.next(new Msg.Modules.ModulesStopNotification(id))
-    this.cp.kill();
+
+    if (this.cp) {
+      this.cp.kill();
+    }
 
     if (this.watch) {
       this.watch.kill();

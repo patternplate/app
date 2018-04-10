@@ -15,6 +15,7 @@ export interface ProjectViewProps {
   port?: number;
   paths?: {
     userData: string;
+    projects: string;
   }
 }
 
@@ -24,6 +25,7 @@ interface InjectedProjectViewProps {
   port: number;
   paths: {
     userData: string;
+    projects: string;
   }
 }
 

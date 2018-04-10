@@ -2,6 +2,7 @@ import * as Path from "path";
 import { Subject } from "rxjs";
 import * as uuid from "uuid";
 import {BehaviorSubject} from "rxjs";
+import * as execa from "execa";
 
 import * as Msg from "../messages";
 import { Git, VersionControl } from "./git";
@@ -9,8 +10,7 @@ import { Modules } from "./modules";
 import { Channel } from "./nextable";
 
 const gitUrlParse = require("git-url-parse");
-// const sander = require("@marionebl/sander");
-// const spawn = require("electron-spawn");
+const sander = require("@marionebl/sander");
 
 export interface ProjectInit {
   autoStart?: boolean;
@@ -53,7 +53,7 @@ export class Project implements Channel {
     return new Project({
       url: "",
       basePath: opts.basePath,
-      path: Path.join(opts.basePath, uuid.v4()),
+      path: Path.join(opts.basePath, "projects", uuid.v4()),
       name: "",
       previous: null,
       autoStart: true
@@ -65,13 +65,11 @@ export class Project implements Channel {
   }
 
   static fromInput(input: ProjectInput, opts: ProjectOptions): Project {
-    const parsed = gitUrlParse(input.url);
-
     return new Project({
       name: input.name,
       url: input.url,
       basePath: opts.basePath,
-      path: Path.join(opts.basePath, parsed.full_name.split("/").join(Path.sep)),
+      path: Path.join(opts.basePath, "projects", uuid.v4()),
       previous: null,
       autoStart: opts.autoStart
     });
@@ -82,7 +80,7 @@ export class Project implements Channel {
     return new Project({
       url,
       basePath: options.basePath,
-      path: Path.join(options.basePath, parsed.full_name.split("/").join(Path.sep)),
+      path: Path.join(options.basePath, "projects", uuid.v4()),
       name: parsed.full_name,
       previous: null,
       autoStart: options.autoStart
@@ -263,7 +261,7 @@ export class Project implements Channel {
   }
 
   async screenshot() {
-    /* const SCREENSHOT = Path.join(this.basePath, "node", "bin", "screenshot.js");
+    const SCREENSHOT = Path.join(this.basePath, "node", "bin", "screenshot.js");
     const screenshotPath = Path.join(this.basePath, "screenshots", `${this.id}.png`);
     const buildPath = Path.join(this.basePath, `builds`, this.id);
 
@@ -290,15 +288,14 @@ export class Project implements Channel {
       await this.modules.getBuild(buildPath);
     }
 
-    console.log(SCREENSHOT);
     await getScreenshot(SCREENSHOT, buildPath, screenshotPath);
-    this.up.next(message); */
+    this.up.next(message);
   }
 }
 
-/* function getScreenshot(BIN: string, from: string, to: string) {
+function getScreenshot(BIN: string, from: string, to: string) {
   return new Promise((resolve, reject) => {
-    const cp = spawn(BIN, from, to, {
+    const cp = execa(BIN, [from, to], {
       stdio: "pipe"
     });
 
@@ -322,4 +319,4 @@ export class Project implements Channel {
     cp.on("close", onEnd);
     cp.on("end", onEnd);
   });
-} */
+}

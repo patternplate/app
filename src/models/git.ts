@@ -33,7 +33,7 @@ export interface VersionControllable extends Channel {
 
 const STATIC_BASE = process.env.NODE_ENV === "production"
   ? (process as any).resourcesPath
-  : Path.resolve(__dirname, '..', '..');
+  : Path.resolve(__dirname, "..", "..");
 
 const GIT = Path.join(STATIC_BASE, "static", "git", "macos", "bin", "git");
 const GIT_EXEC_PATH = Path.dirname(GIT);
@@ -105,7 +105,7 @@ export class Git<T extends VersionControllable> implements VersionControl {
     }
 
     const git = authorizingGit({context: this, tid: this.host.id});
-    await git(["fetch", "origin/master"], {cwd: this.host.path});
+    await git(["fetch", "origin", "master"], {cwd: this.host.path});
 
     // TODO: Fetch here
     const diffResult = await execa(GIT, ["log", "master..origin/master", "--oneline", "--format=format:%H"], {
@@ -174,10 +174,6 @@ export class Git<T extends VersionControllable> implements VersionControl {
     const host = this.host;
     const tid = uuid.v4();
 
-    if (!this.host.path || this.host.path === process.cwd()) {
-      return;
-    }
-
     host.up.next(new VCS.VCSCloneStartNotification(tid, {
       url: this.host.url,
       path: this.host.path
@@ -196,11 +192,11 @@ export class Git<T extends VersionControllable> implements VersionControl {
     const url = Url.format(parsed);
     const git = authorizingGit({context: this, tid});
 
-    git(["clone", url, this.host.path])
+    await git(["clone", url, host.path])
       .catch((err: Error) => {
         host.up.next(new VCS.VCSErrorNotification(tid, err));
       })
-      .then(() => {
+      .then((code) => {
         host.up.next(new VCS.VCSCloneEndNotification(tid, {
           url: host.url,
           path: host.path
@@ -328,6 +324,8 @@ const authorizingGit = (init: AuthorizingGitInit) => {
 
         return context.host.up.next(new VCS.VCSCredentialChallenge(tid, context.host.url));
       }
+
+      throw err;
     });
   };
 }

@@ -304,16 +304,6 @@ const selectItems = (project: ProjectViewModel, paths: {userData: string}): any[
       label: "Sync",
       click: () => project.sync()
     },
-    !project.isWorking() &&
-    !project.inTransition() && {
-      label: "Clear from list",
-      click: () => project.unlist()
-    },
-    !project.isWorking() &&
-      !project.inTransition() && {
-        label: "Remove from disk",
-        click: () => project.remove()
-    },
     {
       type: "separator"
     },
@@ -322,12 +312,23 @@ const selectItems = (project: ProjectViewModel, paths: {userData: string}): any[
       click: () => electron.remote.shell.openItem(project.path)
     },
     {
+      type: "separator"
+    },
+    {
       label: "Copy Path",
       click: () => electron.clipboard.writeText(project.path)
     },
     {
       label: "Copy Git",
       click: () => electron.clipboard.writeText(project.url)
-    }
+    },
+    {
+      type: "separator"
+    },
+    !project.isWorking() &&
+    !project.inTransition() && {
+      label: "Remove",
+      click: () => project.unlist()
+    },
   ].filter(Boolean);
 };

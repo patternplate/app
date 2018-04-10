@@ -49,8 +49,7 @@
     "tslint": "^5.9.1",
     "tslint-config-prettier": "^1.10.0",
     "typescript": "^2.6.2",
-    "webpack": "3",
-    "yargs-parser": "^10.0.0"
+    "webpack": "3"
   },
   "dependencies": {
     "@marionebl/react-web-animation": "0.7.2",
@@ -75,6 +74,7 @@
     "mobx": "^4.1.0",
     "mobx-react": "^5.0.0",
     "npm": "^5.8.0",
+    "puppeteer": "^1.2.0",
     "react": "^16.2.0",
     "react-dom": "^16.2.0",
     "read-pkg": "^3.0.0",
