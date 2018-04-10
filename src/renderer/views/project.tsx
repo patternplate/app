@@ -8,6 +8,7 @@ import { ProjectViewModel, ProjectViewState } from "../view-models";
 
 const { keyframes, styled, Icon } = require("@patternplate/components");
 const { Animated } = require("@marionebl/react-web-animation");
+const tag = require("tag-hoc").default;
 
 export interface ProjectViewProps {
   project: ProjectViewModel;
@@ -80,6 +81,7 @@ export class ProjectView extends React.Component<ProjectViewProps> {
         }}
       >
         <ProjectTile
+          hasError={props.project.state === ProjectViewState.Errored}
           playState={props.project.highlighted ? "running" : "idle"}
           timing={{ duration: 300, iterations: 2 }}
           keyframes={WIGGLE}
@@ -97,7 +99,9 @@ export class ProjectView extends React.Component<ProjectViewProps> {
                 Pull {props.project.diff.length} {props.project.diff.length === 1 ? "update" : "updates"}
               </UpdateButton>
           }
-          <ProjectTilePreview src={props.project.screenshot ? `http://localhost:${props.port}/${props.project.screenshot}` : null}/>
+          <ProjectTilePreview
+            src={props.project.screenshot ? `http://localhost:${props.port}/${props.project.screenshot}` : null}
+          />
           <ProjectTileBar>
             <ProjectIcon
               icon={props.project.logo}
@@ -211,8 +215,8 @@ const ProjectTilePreview = styled.div`
   position: relative;
   height: 200px;
   width: 100%;
-  background: #e5e5e5;
-  background-image: ${(props: any) => props.src ? `url('${props.src}')` : "none"};
+  background-color: ${(props: any) => props.hasError ? props.theme.error : "#e5e5e5"};
+  background-image: ${(props: any) => props.src && !props.hasError ? `url('${props.src}')` : "none"};
   background-size: cover;
   background-repeat: no-repeat;
   background-position: top center;
@@ -320,13 +324,42 @@ const StyledProjectIcon = styled.div`
   background: ${(props: any) => props.bg ? props.bg : 'transparent'}
 `;
 
-const ProjectTile = styled(Animated.div)`
+interface ProjectTileProps {
+  hasError: boolean;
+  playState: "running" | "idle" | "paused";
+  timing: any;
+  keyframes: any;
+  onDoubleClick: any;
+  children: React.ReactNode;
+}
+
+const ProjectTile = (props: ProjectTileProps) => {
+  return (
+    <Animated.div
+      playState={props.playState}
+      timing={props.timing}
+      keyframes={props.keyframes}
+      >
+      <StyledProjectTile
+        hasError={props.hasError}
+        onDoubleClick={props.onDoubleClick}
+        >
+        {props.children}
+      </StyledProjectTile>
+    </Animated.div>
+  );
+};
+
+const StyledProjectTile = styled(tag(["hasError"])("div"))`
   position: relative;
   background: #fff;
-  border: 1px solid #979797;
+  border-style: solid;
+  border-color: ${(props: any) => props.hasError ? props.theme.error : "#979797"};
+  border-width: ${(props: any) => props.hasError ? 2 : 1}px;
   border-radius: 3.5px;
   box-shadow: 0 0 6px rgba(0, 0, 0, 0.12);
   overflow: hidden;
+  box-sizing: border-box;
 `;
 
 interface ProjectPropertyProps {
