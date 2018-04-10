@@ -18,11 +18,7 @@ export class UpdateBadge extends React.Component {
 
     return (
       <StyledBadge
-        onClick={() => {
-          if (app.updateState === AppUpdatesState.Unknown) {
-            app.checkForUpdate();
-          }
-        }}
+        onClick={() => {}}
         cursor={selectCursor(app.updateState)}
         recess={app.updateState === AppUpdatesState.Unknown}
         active={app.updateState === AppUpdatesState.Available}>

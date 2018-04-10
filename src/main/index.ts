@@ -8,6 +8,7 @@ import { autoUpdater } from "electron-updater";
 const ARSON = require("arson");
 const sander = require("@marionebl/sander");
 const log = require("electron-log");
+const globby = require("globby");
 
 require("electron-debug")({ enabled: true });
 const isDevelopment = process.env.NODE_ENV !== "production";
@@ -268,6 +269,12 @@ const unpackModules = async () => {
 
   const staticTargetPath = Path.join(app.getPath("userData"), "node", "bin");
   await sander.copydir(Path.resolve(sourcePath, "static", "node", "bin")).to(staticTargetPath);
+
+  const files = await globby("**/*", {cwd: staticTargetPath});
+
+  files.forEach((file: string) => {
+    Fs.chmodSync(Path.join(staticTargetPath, file), '755');
+  });
 
   const archivePath = Path.join(sourcePath, "node_modules.tar");
   const sumPath = Path.join(sourcePath, "node_modules.md5");

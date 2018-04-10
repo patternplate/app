@@ -1,5 +1,4 @@
 import {action, observable} from "mobx";
-import {ipcRenderer} from "electron";
 
 export enum AppModulesState {
   Started = "STARTED",
@@ -27,10 +26,5 @@ export class AppViewModel {
 
   @action setModulesState(state: AppModulesState) {
     this.modulesState = state;
-  }
-
-  checkForUpdate() {
-    // TODO: Move to renderer/index.tsx
-    ipcRenderer.send("check-update");
   }
 }

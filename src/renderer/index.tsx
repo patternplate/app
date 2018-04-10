@@ -105,6 +105,10 @@ async function main() {
           console.log(err);
         });
     });
+
+    match(Msg.App.ModulesTaskDeferred, () => {
+      electron.ipcRenderer.send("check-modules");
+    });
   });
 
   electron.ipcRenderer.on("menu-request-new", () => {
@@ -152,12 +156,14 @@ async function main() {
   });
 
   electron.ipcRenderer.on("modules-start", () => {
+    console.log("modules-start");
     app.setModulesState(AppModulesState.Started);
     const tid = uuid.v4();
     projects.broadcast(new Msg.App.ModulesUnpackStarted(tid));
   });
 
   electron.ipcRenderer.on("modules-error", (e: any, err: any) => {
+    console.log("modules-error");
     console.error(err);
     app.setModulesState(AppModulesState.Error);
     const tid = uuid.v4();
@@ -165,6 +171,7 @@ async function main() {
   });
 
   electron.ipcRenderer.on("modules-ready", () => {
+    console.log("modules-ready");
     app.setModulesState(AppModulesState.Ready);
     const tid = uuid.v4();
     projects.broadcast(new Msg.App.ModulesUnpackReady(tid));
@@ -173,6 +180,7 @@ async function main() {
   electron.ipcRenderer.send("check-modules");
 
   if (process.env.NODE_ENV !== "production") {
+    (global as any).app = app;
     (global as any).start = start;
     (global as any).projects = projects;
   }
