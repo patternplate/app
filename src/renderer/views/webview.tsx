@@ -5,7 +5,7 @@ import * as uuid from "uuid";
 import * as Msg from "../../messages";
 import {ProjectViewModel} from "../view-models";
 
-const { styled } = require("@patternplate/components");
+const { styled, Icon, Text } = require("@patternplate/components");
 const electron = require("electron");
 
 export interface WebViewProps {
@@ -37,6 +37,10 @@ export class WebView extends React.Component<WebViewProps> {
     const {props} = this;
     return (
       <StyledWebviewContainer loaded={props.active}>
+        <Loader>
+          Loading<br/>
+          <b>{props.project.name}</b>
+        </Loader>
         <StyledWebview
           innerRef={(ref: any) => this.ref = ref}
           src={`http://localhost:${props.project.port}`}
@@ -59,9 +63,50 @@ const StyledWebviewContainer = styled.div`
 
 const StyledWebview = styled("webview")`
   position: absolute;
+  z-index: 2;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+`;
+
+const Loader: React.SFC<{children: React.ReactNode}> = props => (
+  <StyledLoader>
+    <StyledLoaderContainer>
+      <StyledIcon symbol="patternplate" size="l" />
+      <StyledText>{props.children}</StyledText>
+    </StyledLoaderContainer>
+  </StyledLoader>
+);
+
+const StyledLoader = styled.div`
+  position: absolute;
   z-index: 1;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
+  background: rgb(26, 24, 68);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+`;
+
+const StyledLoaderContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+`;
+
+const StyledIcon = styled(Icon)`
+  height: 100px;
+  width: 100px;
+  color: ${(props: any) => props.theme.color};
+`;
+
+const StyledText = styled(Text)`
+  color: ${(props: any) => props.theme.color};
+  line-height: 1.5;
 `;

@@ -244,7 +244,7 @@ export class ProjectViewModel {
   }
 
   isStarting(): boolean {
-    return this.gte(ProjectViewState.Starting);
+    return this.gte(ProjectViewState.Started);
   }
 
   isStarted(): boolean {
