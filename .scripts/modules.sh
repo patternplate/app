@@ -16,9 +16,6 @@ rm -rf local_modules
   --mod @marionebl/sander \
   --ignore electron
 
-cd local_modules
-gtar -cf ../node_modules.tar .
-cd -
+(cd local_modules && gtar -cf ../node_modules.tar .)
 
-MD5=`md5sum node_modules.tar | awk '{ print $1 }'`
-echo $MD5 > node_modules.md5
+shasum -a 256 node_modules.tar > node_modules.sha256

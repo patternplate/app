@@ -1,7 +1,7 @@
 node_modules
 local_modules
 node_modules.tar
-node_modules.md5
+node_modules.sha256
 dist
 *.log
 /app

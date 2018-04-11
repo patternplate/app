@@ -277,16 +277,16 @@ const unpackModules = async () => {
   });
 
   const archivePath = Path.join(sourcePath, "node_modules.tar");
-  const sumPath = Path.join(sourcePath, "node_modules.md5");
+  const sumPath = Path.join(sourcePath, "node_modules.sha256");
   const sourceSum = String(await sander.readFile(sumPath));
 
   const userData = app.getPath("userData");
   const targetPath = Path.join(userData, "node", "node_modules");
-  const targetSumPath = Path.join(userData, "node", "node_modules.md5");
+  const targetSumPath = Path.join(userData, "node", "node_modules.sha256");
   const hasTargetSum = await sander.exists(targetSumPath);
-  const targetSum = hasTargetSum ? String(await sander.readFile(targetSumPath)) : null;
+  const targetSum = hasTargetSum ? String(await sander.readFile(targetSumPath)) : "";
 
-  if (sourceSum === targetSum) {
+  if (targetSum.includes("node_modules.tar") && sourceSum === targetSum) {
     send("modules-ready");
     log.warn(`checksums at ${sumPath} and ${targetSumPath} (${targetSum}) match, nothing to copy.`);
     return;
