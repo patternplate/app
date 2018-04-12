@@ -86,6 +86,7 @@ export class Modules<T extends Installable> {
     ].filter(Boolean);
 
     const cp = execa(NODE, runArgs, {
+      maxBuffer: Infinity,
       cwd: this.host.path,
       env: {
         PATH: [PATH, process.env.PATH].join(":")

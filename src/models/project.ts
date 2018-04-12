@@ -261,6 +261,8 @@ export class Project implements Channel {
   }
 
   async screenshot() {
+    const PATH = Path.join(this.basePath, "node", "node_modules", ".bin");
+    const NODE = Path.join(PATH, "node");
     const SCREENSHOT = Path.join(this.basePath, "node", "bin", "screenshot.js");
     const screenshotPath = Path.join(this.basePath, "screenshots", `${this.id}.png`);
     const buildPath = Path.join(this.basePath, `builds`, this.id);
@@ -288,15 +290,18 @@ export class Project implements Channel {
       await this.modules.getBuild(buildPath);
     }
 
-    await getScreenshot(SCREENSHOT, buildPath, screenshotPath);
+    await getScreenshot(SCREENSHOT, buildPath, screenshotPath, {PATH, NODE});
     this.up.next(message);
   }
 }
 
-function getScreenshot(BIN: string, from: string, to: string) {
+function getScreenshot(BIN: string, from: string, to: string, {PATH, NODE}: any) {
   return new Promise((resolve, reject) => {
-    const cp = execa(BIN, [from, to], {
-      stdio: "pipe"
+    const cp = execa(NODE, [BIN, from, to], {
+      stdio: "pipe",
+      env: {
+        PATH: [PATH, process.env.PATH].join(":")
+      }
     });
 
     cp.stdout.on("data", (data: Buffer) => {
