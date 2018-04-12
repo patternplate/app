@@ -56,7 +56,7 @@ export class WebView extends React.Component<WebViewProps> {
         </Loader>
         <StyledWebview
           innerRef={(ref: any) => this.ref = ref}
-          src={`http://localhost:${props.project.port}`}
+          src={`http://localhost:${props.project.port}?reload=true`}
           />
       </StyledWebviewContainer>
     )
