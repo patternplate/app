@@ -19,7 +19,20 @@ export class WebView extends React.Component<WebViewProps> {
   ref?: any;
 
   componentDidMount() {
-    if (this.ref) {
+    this.props.project.down.subscribe((message: any) => {
+      if (this.ref === null) {
+        return;
+      }
+
+      const match = Msg.match(message);
+
+      match(Msg.Project.ProjectUrlRequest, () => {
+        const resp = new Msg.Project.ProjectUrlResponse(message.tid, this.ref.getURL());
+        this.props.project.up.next(resp);
+      });
+    });
+
+    if (this.ref !== null) {
       const tid = uuid.v4();
       this.props.project.up.next(new Msg.Project.ProjectOpenNotification(tid, this.props.project.id));
 

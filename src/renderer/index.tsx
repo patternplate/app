@@ -83,7 +83,7 @@ async function main() {
 
     match(Msg.UI.ContextMenuResponse, () => {
       const project: ProjectViewModel = message.project;
-      const items = selectItems(project, {userData});
+      const items = selectItems(project, { userData });
       const menu = electron.remote.Menu.buildFromTemplate(items as any);
 
       menu.popup(window, {
@@ -96,10 +96,12 @@ async function main() {
 
       requestOAuthToken(message.url)
         .then(response => {
-          projects.broadcast(new Msg.VCS.VCSCredentialAnswer(message.tid, {
-            host: parsed.host as string,
-            token: response.access_token
-          }))
+          projects.broadcast(
+            new Msg.VCS.VCSCredentialAnswer(message.tid, {
+              host: parsed.host as string,
+              token: response.access_token
+            })
+          );
         })
         .catch(err => {
           console.log(err);
@@ -134,13 +136,13 @@ async function main() {
 
     switch (message.type) {
       case "checking-for-update":
-        return app.setUpdateState(AppUpdatesState.Checking)
+        return app.setUpdateState(AppUpdatesState.Checking);
       case "update-available":
         return app.setUpdateState(AppUpdatesState.Available);
       case "update-not-available": {
         app.setUpdateState(AppUpdatesState.Unavailable);
         setTimeout(() => {
-          return app.setUpdateState(AppUpdatesState.Unknown)
+          return app.setUpdateState(AppUpdatesState.Unknown);
         }, 3000);
         return;
       }
@@ -187,7 +189,13 @@ async function main() {
 
   try {
     ReactDOM.render(
-      <Provider app={app} start={start} projects={projects} paths={{userData}} port={port}>
+      <Provider
+        app={app}
+        start={start}
+        projects={projects}
+        paths={{ userData }}
+        port={port}
+      >
         <App />
       </Provider>,
       el
@@ -200,7 +208,13 @@ async function main() {
     module.hot.accept("./app", () => {
       const NextApp = require("./app").App;
       ReactDOM.render(
-        <Provider app={app} start={start} projects={projects} paths={{userData}} port={port}>
+        <Provider
+          app={app}
+          start={start}
+          projects={projects}
+          paths={{ userData }}
+          port={port}
+        >
           <NextApp />
         </Provider>,
         el
@@ -234,7 +248,13 @@ function requestOAuthToken(url: string): Promise<OAuthResponse> {
   const hostConfig = config.oauth.find(h => h.hostname == parsed.hostname);
 
   if (!hostConfig) {
-    return Promise.reject(new Error(`Could not authenticate at ${parsed.hostname} via https, please use SSH instead.`));
+    return Promise.reject(
+      new Error(
+        `Could not authenticate at ${
+          parsed.hostname
+        } via https, please use SSH instead.`
+      )
+    );
   }
 
   const state = uuid.v4();
@@ -256,7 +276,11 @@ function requestOAuthToken(url: string): Promise<OAuthResponse> {
     .perform(win)
     .then((response: OAuthResponse) => {
       if (response.state !== state) {
-        return Promise.reject(new Error(`Authentication at ${parsed.hostname}, states did not match.`));
+        return Promise.reject(
+          new Error(
+            `Authentication at ${parsed.hostname}, states did not match.`
+          )
+        );
       }
 
       clearTimeout(showTimeout);
@@ -270,15 +294,19 @@ function requestOAuthToken(url: string): Promise<OAuthResponse> {
     });
 }
 
-const selectItems = (project: ProjectViewModel, paths: {userData: string}): any[] => {
+const selectItems = (
+  project: ProjectViewModel,
+  paths: { userData: string }
+): any[] => {
   if (project.editable) {
     return [
       {
         label: "Save",
-        click: () => project.save({
-          basePath: paths.userData,
-          autoStart: true
-        })
+        click: () =>
+          project.save({
+            basePath: paths.userData,
+            autoStart: true
+          })
       },
       {
         label: "Discard",
@@ -308,16 +336,34 @@ const selectItems = (project: ProjectViewModel, paths: {userData: string}): any[
       type: "separator"
     },
     !project.inTransition() &&
-    !project.isWorking() && {
-      label: "Sync",
-      click: () => project.sync()
-    },
+      !project.isWorking() && {
+        label: "Sync",
+        click: () => project.sync()
+      },
     {
       type: "separator"
     },
     {
       label: "Reveal in Finder",
       click: () => electron.remote.shell.openItem(project.path)
+    },
+    project.isStarted() && {
+      label: "Reveal in Browser",
+      click: () => {
+        const tid = uuid.v4();
+
+        project.up.subscribe((message: any) => {
+          if (message.tid !== tid) {
+            return;
+          }
+
+          Msg.match(message)(Msg.Project.ProjectUrlResponse, () => {
+            electron.remote.shell.openExternal(message.url)
+          });
+        });
+
+        project.down.next(new Msg.Project.ProjectUrlRequest(tid));
+      }
     },
     {
       type: "separator"
@@ -330,13 +376,31 @@ const selectItems = (project: ProjectViewModel, paths: {userData: string}): any[
       label: "Copy Git",
       click: () => electron.clipboard.writeText(project.url)
     },
+    project.isStarted() && {
+      label: "Copy URL",
+      click: () => {
+        const tid = uuid.v4();
+
+        project.up.subscribe((message: any) => {
+          if (message.tid !== tid) {
+            return;
+          }
+
+          Msg.match(message)(Msg.Project.ProjectUrlResponse, () => {
+            electron.clipboard.writeText(message.url);
+          });
+        });
+
+        project.down.next(new Msg.Project.ProjectUrlRequest(tid));
+      }
+    },
     {
       type: "separator"
     },
     !project.isWorking() &&
-    !project.inTransition() && {
-      label: "Remove",
-      click: () => project.unlist()
-    },
+      !project.inTransition() && {
+        label: "Remove",
+        click: () => project.unlist()
+      }
   ].filter(Boolean);
 };
